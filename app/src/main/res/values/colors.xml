@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!--    System Colors-->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="silver">#999999</color>
+    <color name="silver_100">#738A93</color>
+    <color name="toolbar">#B0E0E6</color>
+<!--    Customize Colors-->
+    <color name="default_backgroundCardView">#F3F6F4</color>
+    <color name="paper_color">#F8F8F8</color>
+    <color name="progress_background">#BDBFC4</color>
+    <color name="progress_hp">#FF5656</color>
+    <color name="progress_atk">#11B0D1</color>
+    <color name="progress_def">#F970A1</color>
+    <color name="progress_spd">#5AC18E</color>
+    <color name="progress_exp">#7DB0DF</color>
+    <color name="bug">#79BDA2</color>
+    <color name="dark">#666666</color>
+    <color name="dragon">#378A94</color>
+    <color name="electric">#FFE9A8</color>
+    <color name="fairy">#DEEBFF</color>
+    <color name="fire">#F38D80</color>
+    <color name="flying">#C9DEFF</color>
+    <color name="ghost">#B8C3C3</color>
+    <color name="ice">#FFE9EF</color>
+    <color name="poison">#407294</color>
+    <color name="psychic">#0FF1CE</color>
+    <color name="rock">#888877</color>
+    <color name="steel">#407294</color>
+    <color name="water">#C0E1E1</color>
+    <color name="fighting">#F7347A</color>
+    <color name="grass">#88CCCC</color>
+    <color name="ground">#887777</color>
+
+</resources>
