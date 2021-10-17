@@ -2,7 +2,7 @@
     <string name="app_name">Pokemon</string>
     <string name="weight">WEIGHT</string>
     <string name="height">HEIGHT</string>
-    <string name="base_stats">☆BASE PERFORMANCE☆</string>
+    <string name="base_stats">☆PERFORMANCE☆</string>
     <string name="hp">HP</string>
     <string name="atk">ATK</string>
     <string name="def">DEF</string>
