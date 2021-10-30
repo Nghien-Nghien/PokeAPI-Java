@@ -1,12 +1,14 @@
 package com.example.pokemonapi;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pokemonapi.network.RetrofitBuilder;
@@ -29,6 +31,12 @@ public class MainActivity extends AppCompatActivity {
     public RecyclerView mRecyclerView;
     public ProgressBar progressBar;
     public int offset = 0;
+    public int visibleItemCount;
+    public int totalItemCount;
+    public int pastVisibleItems;
+    public GridLayoutManager gridLayoutManager;
+    public boolean loading = true;
+    public static int THRESHOLD = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         mPokemonRecyclerViewAdapter = new PokemonRecyclerViewAdapter(MainActivity.this);
         mRecyclerView.setAdapter(mPokemonRecyclerViewAdapter);
 
+        gridLayoutManager = (GridLayoutManager) mRecyclerView.getLayoutManager();
+
         retrofitBuilder = new RetrofitBuilder();
 
         fetchPokemonList(offset);
@@ -52,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void fetchPokemonList(int offset) {
+        Log.d("abc", "fetchPokemonList(" + offset + ")yyyyyyyyyyyyyyyyyyyy");
+
+        showProgressBar();
+
         mPokemonItemList = new ArrayList<>();
 
         Call<PokemonListAPI> call = retrofitBuilder.requestToApiInterface().fetchPokemonList(offset);
@@ -60,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
         call.enqueue(new Callback<PokemonListAPI>() {
             @Override
             public void onResponse(Call<PokemonListAPI> call, Response<PokemonListAPI> response) {
+                loading = true;
+
                 assert response.body() != null;
                 List<ResultsResponse> resultsList = response.body().getResults();
 
@@ -79,7 +95,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<PokemonListAPI> call, Throwable throwable) {
+                loading = true;
+
                 Toast.makeText(MainActivity.this, throwable.getMessage(), Toast.LENGTH_LONG).show();
+                hideProgressBar();
             }
         });
     }
@@ -89,11 +108,24 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrolled(@NonNull @NotNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if (!recyclerView.canScrollVertically(1) && dy != 0) {
-                    showProgressBar();
+                if (dy > 0) {
+                    visibleItemCount = gridLayoutManager.getChildCount();
+                    totalItemCount = gridLayoutManager.getItemCount();
+                    pastVisibleItems = gridLayoutManager.findFirstVisibleItemPosition();
 
-                    offset += 20;
-                    fetchPokemonList(offset);
+                    Log.d("abc", "visibileCount=" + visibleItemCount);
+                    Log.d("abc", "totalItemCount=" + totalItemCount);
+                    Log.d("abc", "pastVisibleItems=" + pastVisibleItems);
+                    Log.d("abc", "--------------------------------------------------------");
+
+                    if (loading) {
+                        if ((pastVisibleItems + visibleItemCount >= totalItemCount - THRESHOLD)) {
+                            loading = false;
+
+                            offset += 20;
+                            fetchPokemonList(offset);
+                        }
+                    }
                 }
             }
         });
