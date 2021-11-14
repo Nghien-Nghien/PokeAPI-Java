@@ -1,11 +1,11 @@
 package com.example.pokemonapi;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,26 +15,25 @@ import androidx.palette.graphics.Palette;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.pokemonapi.database.DatabaseBuilder;
+import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.network.RetrofitBuilder;
 import com.example.pokemonapi.network.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.network.pokemoninfo.TypesResponse;
+import com.example.pokemonapi.repository.DetailRepository;
+import com.example.pokemonapi.repository.OnEnterDetailRepository;
 import com.github.florent37.glidepalette.BitmapPalette;
 import com.github.florent37.glidepalette.GlidePalette;
 import com.google.android.material.card.MaterialCardView;
 import com.skydoves.progressview.ProgressView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
 public class DetailActivity extends AppCompatActivity {
-    private RetrofitBuilder retrofitBuilder;
-    public PokemonInfoAPI basePerformance;
-    private TypeRecyclerViewAdapter mTypeRecyclerViewAdapter;
-    private List<TypeItem> mTypeItemList;
+    public TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
+    public RecyclerView recyclerView;
+    public ProgressBar progressBar;
+    public DetailRepository detailRepository;
 
     MaterialCardView cardView;
     ImageButton arrowButton;
@@ -47,7 +46,6 @@ public class DetailActivity extends AppCompatActivity {
     ProgressView progress_def;
     ProgressView progress_spd;
     ProgressView progress_exp;
-    RecyclerView mRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +64,14 @@ public class DetailActivity extends AppCompatActivity {
         progress_def = findViewById(R.id.progress_def);
         progress_spd = findViewById(R.id.progress_spd);
         progress_exp = findViewById(R.id.progress_exp);
-        mRecyclerView = findViewById(R.id.typesView);
+
+        progressBar = findViewById(R.id.progressBar);
+
+        recyclerView = findViewById(R.id.typeList);
+        recyclerView.setHasFixedSize(true);
+
+        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(this, new TypeRecyclerViewListAdapter.TypeDiff());
+        recyclerView.setAdapter(typeRecyclerViewListAdapter);
 
         Intent intent = getIntent();
 
@@ -92,16 +97,62 @@ public class DetailActivity extends AppCompatActivity {
                                 }).crossfade(true))
                 .into(this.imagePoke);
 
-        retrofitBuilder = new RetrofitBuilder();
-        basePerformance = new PokemonInfoAPI();
+        RetrofitBuilder retrofitBuilder = new RetrofitBuilder();
+        PokemonInfoDAO pokemonInfoDAO = new DatabaseBuilder(this).databaseBuilder().pokemonInfoDAO();
+        PokemonInfoAPI basePerformance = new PokemonInfoAPI();
+        detailRepository = new DetailRepository(retrofitBuilder, pokemonInfoDAO, basePerformance);
 
-        mTypeRecyclerViewAdapter = new TypeRecyclerViewAdapter(DetailActivity.this);
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setAdapter(mTypeRecyclerViewAdapter);
+        detailRepository.setListener(new OnEnterDetailRepository() {
+            @Override
+            public void onOnlineResponse(List<TypesResponse> types, String heightFormatted, String weightFormatted, Float hpFormatted, Float atkFormatted, Float defFormatted, Float spdFormatted, Float expFormatted, String hpString, String atkString, String defString, String spdString, String expString) {
+                typeRecyclerViewListAdapter.refreshTypeList(types);
+                height.setText(heightFormatted);
+                weight.setText(weightFormatted);
+                progress_hp.setProgress(hpFormatted);
+                progress_atk.setProgress(atkFormatted);
+                progress_def.setProgress(defFormatted);
+                progress_spd.setProgress(spdFormatted);
+                progress_exp.setProgress(expFormatted);
+                progress_hp.setLabelText(hpString);
+                progress_atk.setLabelText(atkString);
+                progress_def.setLabelText(defString);
+                progress_spd.setLabelText(spdString);
+                progress_exp.setLabelText(expString);
+                hideProgressBar();
+            }
+
+            @Override
+            public void onOfflineResponse(PokemonInfoAPI dataOffline) {
+                typeRecyclerViewListAdapter.refreshTypeList(dataOffline.types);
+                height.setText(dataOffline.heightFormatted);
+                weight.setText(dataOffline.weightFormatted);
+                progress_hp.setProgress(dataOffline.hpFormatted);
+                progress_atk.setProgress(dataOffline.atkFormatted);
+                progress_def.setProgress(dataOffline.defFormatted);
+                progress_spd.setProgress(dataOffline.spdFormatted);
+                progress_exp.setProgress(dataOffline.expFormatted);
+                progress_hp.setLabelText(dataOffline.hpString);
+                progress_atk.setLabelText(dataOffline.atkString);
+                progress_def.setLabelText(dataOffline.defString);
+                progress_spd.setLabelText(dataOffline.spdString);
+                progress_exp.setLabelText(dataOffline.expString);
+                hideProgressBar();
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                hideProgressBar();
+                Toast.makeText(DetailActivity.this, throwable.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
 
         setArrowButton(arrowButton);
-
         fetchPokemonInfo(namePoke);
+    }
+
+    public void fetchPokemonInfo(String namePoke) {
+        showProgressBar();
+        detailRepository.fetchPokemonInfo(namePoke);
     }
 
     public void setArrowButton(ImageButton arrowButton) {
@@ -113,57 +164,12 @@ public class DetailActivity extends AppCompatActivity {
         });
     }
 
-    public void fetchPokemonInfo(String namePoke) {
-        mTypeItemList = new ArrayList<>();
+    public void showProgressBar() {
+        progressBar.setVisibility(View.VISIBLE);
+    }
 
-        Call<PokemonInfoAPI> call = retrofitBuilder.requestToApiInterface().fetchPokemonInfo(namePoke);
-
-        //noinspection NullableProblems
-        call.enqueue(new Callback<PokemonInfoAPI>() {
-            @Override
-            public void onResponse(Call<PokemonInfoAPI> call, Response<PokemonInfoAPI> response) {
-                assert response.body() != null;
-
-                //Get these info: weight, height
-                PokemonInfoAPI baseInfo = response.body();
-
-                @SuppressLint("DefaultLocale") String weightPoke = String.format("%.1f KG", (float) baseInfo.getWeight() / 10);
-                @SuppressLint("DefaultLocale") String heightPoke = String.format("%.1f M", (float) baseInfo.getHeight() / 10);
-
-                weight.setText(weightPoke);
-                height.setText(heightPoke);
-
-                //Get Base Performance
-                progress_hp.setProgress((float) basePerformance.hp);
-                progress_hp.setLabelText(basePerformance.getHPString());
-                progress_atk.setProgress((float) basePerformance.atk);
-                progress_atk.setLabelText(basePerformance.getATKString());
-                progress_def.setProgress((float) basePerformance.def);
-                progress_def.setLabelText(basePerformance.getDEFString());
-                progress_spd.setProgress((float) basePerformance.spd);
-                progress_spd.setLabelText(basePerformance.getSPDString());
-                progress_exp.setProgress((float) basePerformance.exp);
-                progress_exp.setLabelText(basePerformance.getEXPString());
-
-                //Get name of types Pokemon and Color Types
-                List<TypesResponse> typesList = response.body().getTypes();
-
-                for (int i = 0; i < typesList.size(); i++) {
-                    TypesResponse type = typesList.get(i);
-
-                    String nameType = type.getType().getName();
-
-                    mTypeItemList.add(new TypeItem(nameType));
-                }
-
-                mTypeRecyclerViewAdapter.refreshTypeList(mTypeItemList);
-            }
-
-            @Override
-            public void onFailure(Call<PokemonInfoAPI> call, Throwable throwable) {
-                Toast.makeText(DetailActivity.this, throwable.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+    public void hideProgressBar() {
+        progressBar.setVisibility(View.GONE);
     }
 
     @Override

@@ -1,18 +1,12 @@
 package com.example.pokemonapi.network;
 
-import android.os.SystemClock;
-
-import java.io.IOException;
-
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitBuilder {
-    public Retrofit retrofit() {
+    public Retrofit retrofitBuilder() {
         return new Retrofit.Builder()
                 .baseUrl("https://pokeapi.co/api/v2/")
                 .client(createOkHTTPClient())
@@ -21,7 +15,7 @@ public class RetrofitBuilder {
     }
 
     public APIInterface requestToApiInterface() {
-        return retrofit().create(APIInterface.class);
+        return retrofitBuilder().create(APIInterface.class);
     }
 
     public OkHttpClient createOkHTTPClient() {
@@ -30,18 +24,6 @@ public class RetrofitBuilder {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         builder.addNetworkInterceptor(httpLoggingInterceptor);
 
-        Interceptor delayInterceptor = new Interceptor() {
-            @Override
-            public Response intercept(Chain chain) throws IOException {
-                SystemClock.sleep(2000);
-                return chain.proceed(chain.request());
-            }
-        };
-
-        //builder.addNetworkInterceptor(delayInterceptor);
-
-        OkHttpClient client = builder.build();
-
-        return client;
+        return builder.build();
     }
 }

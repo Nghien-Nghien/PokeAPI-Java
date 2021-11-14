@@ -2,13 +2,13 @@ package com.example.pokemonapi.network.pokemonlist;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class PokemonListAPI {
     @SerializedName("results")
-    public ArrayList<ResultsResponse> results;
+    public List<ResultsResponse> results;
 
-    public ArrayList<ResultsResponse> getResults() {
+    public List<ResultsResponse> getResults() {
         return results;
     }
 }
