@@ -1,7 +1,7 @@
-package com.example.pokemonapi.network;
+package com.example.pokemonapi.model.network;
 
-import com.example.pokemonapi.network.pokemoninfo.PokemonInfoAPI;
-import com.example.pokemonapi.network.pokemonlist.PokemonListAPI;
+import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
+import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
 
 import retrofit2.Call;
 import retrofit2.http.GET;

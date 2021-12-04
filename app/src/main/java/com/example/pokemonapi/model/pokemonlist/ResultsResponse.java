@@ -1,4 +1,4 @@
-package com.example.pokemonapi.network.pokemonlist;
+package com.example.pokemonapi.model.pokemonlist;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;

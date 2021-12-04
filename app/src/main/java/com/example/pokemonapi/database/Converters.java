@@ -2,7 +2,7 @@ package com.example.pokemonapi.database;
 
 import androidx.room.TypeConverter;
 
-import com.example.pokemonapi.network.pokemoninfo.TypesResponse;
+import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 

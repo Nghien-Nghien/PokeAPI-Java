@@ -1,4 +1,4 @@
-package com.example.pokemonapi.network;
+package com.example.pokemonapi.model.network;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;

@@ -1,4 +1,4 @@
-package com.example.pokemonapi.network.pokemoninfo;
+package com.example.pokemonapi.model.pokemoninfo;
 
 import com.example.pokemonapi.R;
 

@@ -1,9 +1,8 @@
 package com.example.pokemonapi.repository;
 
 import com.example.pokemonapi.database.PokemonListDAO;
-import com.example.pokemonapi.network.RetrofitBuilder;
-import com.example.pokemonapi.network.pokemonlist.PokemonListAPI;
-import com.example.pokemonapi.network.pokemonlist.ResultsResponse;
+import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
+import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,24 +11,27 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainRepository {
-    private final RetrofitBuilder retrofitBuilder;
+public class MainPresenter implements Contracts.MainPresenter {
+    private final Contracts.MainView mainView;
+    private final Contracts.Model model;
     private final PokemonListDAO pokemonListDAO;
     private List<ResultsResponse> data;
-    private OnEnterMainRepository listener;
 
-    public MainRepository(RetrofitBuilder retrofitBuilder, PokemonListDAO pokemonListDAO) {
-        this.retrofitBuilder = retrofitBuilder;
+    public MainPresenter(Contracts.MainView mainView, Contracts.Model model, PokemonListDAO pokemonListDAO) {
+        this.mainView = mainView;
+        this.model = model;
         this.pokemonListDAO = pokemonListDAO;
     }
 
+    @Override
     public void fetchPokemonList(int offset) {
         //pokemonListDAO.deleteAll(); // use to clear old database
+        mainView.showProgressBar();
         data = new ArrayList<>();
 
         if (pokemonListDAO.getPokemonList(offset).isEmpty()) {
 
-            Call<PokemonListAPI> call = retrofitBuilder.requestToApiInterface().fetchPokemonList(offset);
+            Call<PokemonListAPI> call = model.callFetchPokemonList(offset);
 
             //noinspection NullableProblems
             call.enqueue(new Callback<PokemonListAPI>() {
@@ -48,21 +50,20 @@ public class MainRepository {
                         data.add(new ResultsResponse(offset, namePoke, urlPoke));
                     }
 
-                    listener.onOnlineResponse(data);
+                    mainView.hideProgressBar();
+                    mainView.onOnlineResponse(data);
                     pokemonListDAO.insertPokemonList(data);
                 }
 
                 @Override
                 public void onFailure(Call<PokemonListAPI> call, Throwable throwable) {
-                    listener.onFailure(throwable);
+                    mainView.hideProgressBar();
+                    mainView.onFailure(throwable.toString());
                 }
             });
         } else {
-            listener.onOfflineResponse(pokemonListDAO.getPokemonList(offset));
+            mainView.hideProgressBar();
+            mainView.onOfflineResponse(pokemonListDAO.getPokemonList(offset));
         }
-    }
-
-    public void setListener(OnEnterMainRepository listener) {
-        this.listener = listener;
     }
 }

@@ -1,4 +1,4 @@
-package com.example.pokemonapi.network.pokemonlist;
+package com.example.pokemonapi.model.pokemonlist;
 
 import com.google.gson.annotations.SerializedName;
 

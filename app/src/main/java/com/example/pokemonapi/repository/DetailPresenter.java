@@ -3,9 +3,8 @@ package com.example.pokemonapi.repository;
 import android.annotation.SuppressLint;
 
 import com.example.pokemonapi.database.PokemonInfoDAO;
-import com.example.pokemonapi.network.RetrofitBuilder;
-import com.example.pokemonapi.network.pokemoninfo.PokemonInfoAPI;
-import com.example.pokemonapi.network.pokemoninfo.TypesResponse;
+import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
+import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,25 +13,28 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class DetailRepository {
-    private final RetrofitBuilder retrofitBuilder;
+public class DetailPresenter implements Contracts.DetailPresenter {
+    private final Contracts.DetailView detailView;
+    private final Contracts.Model model;
     private final PokemonInfoDAO pokemonInfoDAO;
     private final PokemonInfoAPI basePerformance;
     private List<TypesResponse> typesData;
-    private OnEnterDetailRepository listener;
 
-    public DetailRepository(RetrofitBuilder retrofitBuilder, PokemonInfoDAO pokemonInfoDAO, PokemonInfoAPI basePerformance) {
-        this.retrofitBuilder = retrofitBuilder;
+    public DetailPresenter(Contracts.DetailView detailView, Contracts.Model model, PokemonInfoDAO pokemonInfoDAO, PokemonInfoAPI basePerformance) {
+        this.detailView = detailView;
+        this.model = model;
         this.pokemonInfoDAO = pokemonInfoDAO;
         this.basePerformance = basePerformance;
     }
 
+    @Override
     public void fetchPokemonInfo(String namePoke) {
         //pokemonInfoDAO.deleteAll(); // use to clear old database
+        detailView.showProgressBar();
         typesData = new ArrayList<>();
 
         if (pokemonInfoDAO.getPokemonInfo(namePoke) == null) {
-            Call<PokemonInfoAPI> call = retrofitBuilder.requestToApiInterface().fetchPokemonInfo(namePoke);
+            Call<PokemonInfoAPI> call = model.callFetchPokemonInfo(namePoke);
 
             //noinspection NullableProblems
             call.enqueue(new Callback<PokemonInfoAPI>() {
@@ -69,7 +71,8 @@ public class DetailRepository {
                         typesData.add(new TypesResponse(nameType));
                     }
 
-                    listener.onOnlineResponse(typesData, heightFormatted, weightFormatted,
+                    detailView.hideProgressBar();
+                    detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
                             hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
                             hpString, atkString, defString, spdString, expString);
                     pokemonInfoDAO.insertPokemonInfo(new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
@@ -79,15 +82,13 @@ public class DetailRepository {
 
                 @Override
                 public void onFailure(Call<PokemonInfoAPI> call, Throwable throwable) {
-                    listener.onFailure(throwable);
+                    detailView.hideProgressBar();
+                    detailView.onFailure(throwable.toString());
                 }
             });
         } else {
-            listener.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
+            detailView.hideProgressBar();
+            detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
         }
-    }
-
-    public void setListener(OnEnterDetailRepository listener) {
-        this.listener = listener;
     }
 }

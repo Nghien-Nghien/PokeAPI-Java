@@ -5,7 +5,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
-import com.example.pokemonapi.network.pokemonlist.ResultsResponse;
+import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 
 import java.util.List;
 

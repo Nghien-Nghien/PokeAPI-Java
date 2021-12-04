@@ -4,8 +4,8 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-import com.example.pokemonapi.network.pokemoninfo.PokemonInfoAPI;
-import com.example.pokemonapi.network.pokemonlist.ResultsResponse;
+import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
+import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 
 @Database(entities = {ResultsResponse.class, PokemonInfoAPI.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})

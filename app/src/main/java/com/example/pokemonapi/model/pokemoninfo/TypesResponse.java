@@ -1,4 +1,4 @@
-package com.example.pokemonapi.network.pokemoninfo;
+package com.example.pokemonapi.model.pokemoninfo;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -9,16 +9,12 @@ public class TypesResponse {
         this.nameType = nameType;
     }
 
-    public String getNameType() {
-        return nameType;
-    }
+    public String getNameType() { return nameType; }
 
     @SerializedName("type")
     public Type type;
 
-    public Type getType() {
-        return type;
-    }
+    public Type getType() { return type; }
 
     public static class Type {
         @SerializedName("name")

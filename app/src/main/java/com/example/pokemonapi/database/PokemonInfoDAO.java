@@ -5,7 +5,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
-import com.example.pokemonapi.network.pokemoninfo.PokemonInfoAPI;
+import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 
 @Dao
 public interface PokemonInfoDAO {
