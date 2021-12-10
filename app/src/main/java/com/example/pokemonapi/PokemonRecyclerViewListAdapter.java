@@ -2,7 +2,6 @@ package com.example.pokemonapi;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,12 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse, PokemonRecyclerViewListAdapter.RecyclerViewViewHolder> {
+
     private final Context context;
+    private final OnItemClickListener onItemClickListener;
     private final List<ResultsResponse> pokemonList = new ArrayList<>();
 
-    public PokemonRecyclerViewListAdapter(Context context, @NonNull DiffUtil.ItemCallback<ResultsResponse> diffItemCallback) {
+    public PokemonRecyclerViewListAdapter(Context context, OnItemClickListener onItemClickListener, @NonNull DiffUtil.ItemCallback<ResultsResponse> diffItemCallback) {
         super(diffItemCallback);
         this.context = context;
+        this.onItemClickListener = onItemClickListener;
     }
 
     @NonNull
@@ -68,17 +70,9 @@ public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse,
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(view.getContext(), DetailActivity.class);
-                intent.putExtra("NamePoke", namePoke);
-                intent.putExtra("ImagePoke", imagePoke);
-                view.getContext().startActivity(intent);
+                onItemClickListener.onClick(namePoke, imagePoke);
             }
         });
-    }
-
-    public void refreshPokemonList(List<ResultsResponse> data) {
-        pokemonList.addAll(data);
-        notifyDataSetChanged();
     }
 
     @Override
@@ -86,7 +80,18 @@ public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse,
         return pokemonList.size();
     }
 
+    public void refreshPokemonList(List<ResultsResponse> data) {
+        pokemonList.addAll(data);
+        notifyDataSetChanged();
+    }
+
+    public void clearAllOldData() {
+        pokemonList.clear();
+        notifyDataSetChanged();
+    }
+
     public static class RecyclerViewViewHolder extends RecyclerView.ViewHolder {
+
         public PokemonItemBinding pokemonItemBinding;
 
         public RecyclerViewViewHolder(PokemonItemBinding pokemonItemBinding) {
@@ -107,5 +112,9 @@ public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse,
         public boolean areContentsTheSame(@NonNull @NotNull ResultsResponse oldItem, @NonNull @NotNull ResultsResponse newItem) {
             return oldItem == newItem;
         }
+    }
+
+    public interface OnItemClickListener {
+        void onClick(String namePoke, String imagePoke);
     }
 }

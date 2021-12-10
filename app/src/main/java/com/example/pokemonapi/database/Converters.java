@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Converters {
+
     @TypeConverter
     public static String listToJson(List<TypesResponse> types) {
         return new Gson().toJson(types);
@@ -17,6 +18,7 @@ public class Converters {
 
     @TypeConverter
     public static List<TypesResponse> jsonToList(String types) {
-        return new Gson().fromJson(types, new TypeToken<ArrayList<TypesResponse>>() {}.getType());
+        return new Gson().fromJson(types, new TypeToken<ArrayList<TypesResponse>>() {
+        }.getType());
     }
 }

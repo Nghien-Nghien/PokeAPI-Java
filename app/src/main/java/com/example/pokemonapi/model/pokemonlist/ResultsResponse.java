@@ -8,6 +8,7 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(tableName = "PokemonList")
 public class ResultsResponse {
+
     public Integer offset;
 
     @SerializedName("name")

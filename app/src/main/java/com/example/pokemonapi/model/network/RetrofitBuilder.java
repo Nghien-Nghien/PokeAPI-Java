@@ -6,6 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitBuilder {
+
     public Retrofit retrofitBuilder() {
         return new Retrofit.Builder()
                 .baseUrl("https://pokeapi.co/api/v2/")

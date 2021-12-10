@@ -9,6 +9,7 @@ import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 
 @Dao
 public interface PokemonInfoDAO {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertPokemonInfo(PokemonInfoAPI pokemonInfoAPI);
 

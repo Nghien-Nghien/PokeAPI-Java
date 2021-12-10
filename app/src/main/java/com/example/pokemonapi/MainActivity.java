@@ -1,5 +1,6 @@
 package com.example.pokemonapi;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -8,9 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.example.pokemonapi.database.DatabaseBuilder;
-import com.example.pokemonapi.database.PokemonListDAO;
 import com.example.pokemonapi.databinding.ActivityMainBinding;
 import com.example.pokemonapi.model.network.RetrofitBuilder;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
@@ -22,7 +22,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements Contracts.MainView {
+public class MainActivity extends AppCompatActivity implements Contracts.MainView, PokemonRecyclerViewListAdapter.OnItemClickListener {
+
     public ActivityMainBinding activityMainBinding;
     public PokemonRecyclerViewListAdapter pokemonRecyclerViewListAdapter;
     public GridLayoutManager gridLayoutManager;
@@ -31,8 +32,10 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
     public int totalItemCount;
     public int pastVisibleItems;
     public int THRESHOLD = 4;
-    public int offset = 0;
+    public static int offset = 0;
     public boolean loading = true;
+    public static final String EXTRA_NAME_PARAM = "Name Pokemon";
+    public static final String EXTRA_IMAGE_PARAM = "Image Pokemon";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,21 +44,24 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
         setContentView(activityMainBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        activityMainBinding.pokemonList.setHasFixedSize(true);
-        pokemonRecyclerViewListAdapter = new PokemonRecyclerViewListAdapter(this, new PokemonRecyclerViewListAdapter.PokemonDiff());
-        activityMainBinding.pokemonList.setAdapter(pokemonRecyclerViewListAdapter);
+        mainPresenter = new MainPresenter(this, new Model(new RetrofitBuilder()));
 
-        gridLayoutManager = (GridLayoutManager) activityMainBinding.pokemonList.getLayoutManager();
-
-        PokemonListDAO pokemonListDAO = new DatabaseBuilder(this).databaseBuilder().pokemonListDAO();
-        mainPresenter = new MainPresenter(this, new Model(new RetrofitBuilder()), pokemonListDAO);
-
-        fetchPokemonList(offset);
+        setUpRecyclerView();
         loadMoreOnRecyclerView();
+        fetchPokemonList(offset);
+        pullToRefresh(offset);
     }
 
     public void fetchPokemonList(int offset) {
         mainPresenter.fetchPokemonList(offset);
+    }
+
+    public void setUpRecyclerView() {
+        activityMainBinding.pokemonList.setHasFixedSize(true);
+        pokemonRecyclerViewListAdapter = new PokemonRecyclerViewListAdapter(this, this, new PokemonRecyclerViewListAdapter.PokemonDiff());
+        activityMainBinding.pokemonList.setAdapter(pokemonRecyclerViewListAdapter);
+
+        gridLayoutManager = (GridLayoutManager) activityMainBinding.pokemonList.getLayoutManager();
     }
 
     public void loadMoreOnRecyclerView() {
@@ -79,22 +85,39 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
         });
     }
 
+    public void pullToRefresh(int offset) {
+        activityMainBinding.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                pokemonRecyclerViewListAdapter.clearAllOldData();
+                fetchPokemonList(offset);
+                MainActivity.offset = 0;
+            }
+        });
+    }
+
     @Override
     public void onOnlineResponse(List<ResultsResponse> dataOnline) {
         loading = true;
+        activityMainBinding.swipeRefreshLayout.setRefreshing(false);
         pokemonRecyclerViewListAdapter.refreshPokemonList(dataOnline);
     }
 
     @Override
     public void onOfflineResponse(List<ResultsResponse> dataOffline) {
         loading = true;
+        activityMainBinding.swipeRefreshLayout.setRefreshing(false);
         pokemonRecyclerViewListAdapter.refreshPokemonList(dataOffline);
     }
 
     @Override
     public void onFailure(String errorCode) {
-        loading = true;
         Toast.makeText(MainActivity.this, errorCode, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void toastForOfflineMode() {
+        Toast.makeText(MainActivity.this, getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -119,5 +142,13 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
                             | View.SYSTEM_UI_FLAG_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); //The IMMERSIVE_STICKY use to hide Navigation Bar after short time don't touch on it
         }
+    }
+
+    @Override
+    public void onClick(String namePoke, String imagePoke) {
+        Intent intent = new Intent(this, DetailActivity.class);
+        intent.putExtra(EXTRA_NAME_PARAM, namePoke);
+        intent.putExtra(EXTRA_IMAGE_PARAM, imagePoke);
+        startActivity(intent);
     }
 }

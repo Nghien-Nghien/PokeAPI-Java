@@ -1,14 +1,27 @@
 package com.example.pokemonapi.database;
 
-import android.content.Context;
+import android.app.Application;
 
 import androidx.room.Room;
 
 public class DatabaseBuilder {
-    private final Context context;
 
-    public DatabaseBuilder(Context context) {
+    private static DatabaseBuilder INSTANCE;
+    private Application context;
+
+    private DatabaseBuilder() {
+    }
+
+    public void setContext(Application context) {
         this.context = context;
+    }
+
+    public static DatabaseBuilder getINSTANCE() {
+        if (INSTANCE == null) {
+            INSTANCE = new DatabaseBuilder();
+        }
+
+        return INSTANCE;
     }
 
     public AppDatabase databaseBuilder() {

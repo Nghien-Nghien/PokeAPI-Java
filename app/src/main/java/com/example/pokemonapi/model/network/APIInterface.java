@@ -9,6 +9,7 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface APIInterface {
+
     @GET("pokemon?limit=20")
     Call<PokemonListAPI> fetchPokemonList(@Query("offset") int offset);
 

@@ -14,7 +14,9 @@ import java.util.SplittableRandom;
 
 @Entity(tableName = "PokemonInfo")
 public class PokemonInfoAPI {
-    public PokemonInfoAPI() {}
+
+    public PokemonInfoAPI() {
+    }
 
     @Ignore
     public final int maxHP = 300;

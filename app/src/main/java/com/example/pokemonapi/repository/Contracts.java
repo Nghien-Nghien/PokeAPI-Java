@@ -10,6 +10,7 @@ import java.util.List;
 import retrofit2.Call;
 
 public interface Contracts {
+
     interface Model {
         Call<PokemonListAPI> callFetchPokemonList(int offset);
 
@@ -31,6 +32,8 @@ public interface Contracts {
 
         void onFailure(String errorCode);
 
+        void toastForOfflineMode();
+
         void showProgressBar();
 
         void hideProgressBar();
@@ -44,6 +47,8 @@ public interface Contracts {
         void onOfflineResponse(PokemonInfoAPI dataOffline);
 
         void onFailure(String errorCode);
+
+        void toastForOfflineMode();
 
         void showProgressBar();
 

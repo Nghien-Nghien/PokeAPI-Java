@@ -2,6 +2,7 @@ package com.example.pokemonapi.repository;
 
 import android.annotation.SuppressLint;
 
+import com.example.pokemonapi.database.DatabaseBuilder;
 import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
@@ -14,17 +15,18 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class DetailPresenter implements Contracts.DetailPresenter {
+
     private final Contracts.DetailView detailView;
     private final Contracts.Model model;
     private final PokemonInfoDAO pokemonInfoDAO;
     private final PokemonInfoAPI basePerformance;
     private List<TypesResponse> typesData;
 
-    public DetailPresenter(Contracts.DetailView detailView, Contracts.Model model, PokemonInfoDAO pokemonInfoDAO, PokemonInfoAPI basePerformance) {
+    public DetailPresenter(Contracts.DetailView detailView, Contracts.Model model) {
         this.detailView = detailView;
         this.model = model;
-        this.pokemonInfoDAO = pokemonInfoDAO;
-        this.basePerformance = basePerformance;
+        pokemonInfoDAO = DatabaseBuilder.getINSTANCE().databaseBuilder().pokemonInfoDAO();
+        basePerformance = new PokemonInfoAPI();
     }
 
     @Override
@@ -33,62 +35,62 @@ public class DetailPresenter implements Contracts.DetailPresenter {
         detailView.showProgressBar();
         typesData = new ArrayList<>();
 
-        if (pokemonInfoDAO.getPokemonInfo(namePoke) == null) {
-            Call<PokemonInfoAPI> call = model.callFetchPokemonInfo(namePoke);
+        Call<PokemonInfoAPI> call = model.callFetchPokemonInfo(namePoke);
 
-            //noinspection NullableProblems
-            call.enqueue(new Callback<PokemonInfoAPI>() {
-                @Override
-                public void onResponse(Call<PokemonInfoAPI> call, Response<PokemonInfoAPI> response) {
-                    assert response.body() != null;
+        //noinspection NullableProblems
+        call.enqueue(new Callback<PokemonInfoAPI>() {
+            @Override
+            public void onResponse(Call<PokemonInfoAPI> call, Response<PokemonInfoAPI> response) {
+                assert response.body() != null;
 
-                    //Get these info: weight, height
-                    PokemonInfoAPI baseInfo = response.body();
+                //Get these info: weight, height
+                PokemonInfoAPI baseInfo = response.body();
 
-                    @SuppressLint("DefaultLocale") String heightFormatted = String.format("%.1f M", (float) baseInfo.getHeight() / 10);
-                    @SuppressLint("DefaultLocale") String weightFormatted = String.format("%.1f KG", (float) baseInfo.getWeight() / 10);
+                @SuppressLint("DefaultLocale") String heightFormatted = String.format("%.1f M", (float) baseInfo.getHeight() / 10);
+                @SuppressLint("DefaultLocale") String weightFormatted = String.format("%.1f KG", (float) baseInfo.getWeight() / 10);
 
-                    //Get Base Performance
-                    Float hpFormatted = (float) basePerformance.hp;
-                    Float atkFormatted = (float) basePerformance.atk;
-                    Float defFormatted = (float) basePerformance.def;
-                    Float spdFormatted = (float) basePerformance.spd;
-                    Float expFormatted = (float) basePerformance.exp;
+                //Get Base Performance
+                Float hpFormatted = (float) basePerformance.hp;
+                Float atkFormatted = (float) basePerformance.atk;
+                Float defFormatted = (float) basePerformance.def;
+                Float spdFormatted = (float) basePerformance.spd;
+                Float expFormatted = (float) basePerformance.exp;
 
-                    String hpString = basePerformance.hpString;
-                    String atkString = basePerformance.atkString;
-                    String defString = basePerformance.defString;
-                    String spdString = basePerformance.spdString;
-                    String expString = basePerformance.expString;
+                String hpString = basePerformance.hpString;
+                String atkString = basePerformance.atkString;
+                String defString = basePerformance.defString;
+                String spdString = basePerformance.spdString;
+                String expString = basePerformance.expString;
 
-                    //Get name of types Pokemon and Color Types
-                    List<TypesResponse> typesList = response.body().getTypes();
-                    for (int i = 0; i < typesList.size(); i++) {
-                        TypesResponse type = typesList.get(i);
+                //Get name of types Pokemon and Color Types
+                List<TypesResponse> typesList = response.body().getTypes();
+                for (int i = 0; i < typesList.size(); i++) {
+                    TypesResponse type = typesList.get(i);
 
-                        String nameType = type.getType().getName();
+                    String nameType = type.getType().getName();
 
-                        typesData.add(new TypesResponse(nameType));
-                    }
-
-                    detailView.hideProgressBar();
-                    detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
-                            hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
-                            hpString, atkString, defString, spdString, expString);
-                    pokemonInfoDAO.insertPokemonInfo(new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
-                            hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
-                            hpString, atkString, defString, spdString, expString));
+                    typesData.add(new TypesResponse(nameType));
                 }
 
-                @Override
-                public void onFailure(Call<PokemonInfoAPI> call, Throwable throwable) {
-                    detailView.hideProgressBar();
-                    detailView.onFailure(throwable.toString());
+                detailView.hideProgressBar();
+                detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
+                        hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
+                        hpString, atkString, defString, spdString, expString);
+                pokemonInfoDAO.insertPokemonInfo(new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
+                        hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
+                        hpString, atkString, defString, spdString, expString));
+            }
+
+            @Override
+            public void onFailure(Call<PokemonInfoAPI> call, Throwable throwable) {
+                detailView.hideProgressBar();
+                detailView.onFailure(throwable.toString());
+
+                if (pokemonInfoDAO.getPokemonInfo(namePoke) != null) {
+                    detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
+                    detailView.toastForOfflineMode();
                 }
-            });
-        } else {
-            detailView.hideProgressBar();
-            detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
-        }
+            }
+        });
     }
 }

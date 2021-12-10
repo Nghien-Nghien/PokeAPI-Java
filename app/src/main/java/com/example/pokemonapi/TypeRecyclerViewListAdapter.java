@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TypeRecyclerViewListAdapter extends ListAdapter<TypesResponse, TypeRecyclerViewListAdapter.RecyclerViewViewHolder> {
+
     public PokemonTypeColor pokemonTypeColor = new PokemonTypeColor();
     private final Context context;
     private final List<TypesResponse> typeList = new ArrayList<>();
@@ -46,18 +47,19 @@ public class TypeRecyclerViewListAdapter extends ListAdapter<TypesResponse, Type
         holder.typeItemBinding.cardView.setCardBackgroundColor(context.getColor(pokemonTypeColor.getTypeColor(typePoke)));
     }
 
+    @Override
+    public int getItemCount() {
+        return typeList.size();
+    }
+
     public void refreshTypeList(List<TypesResponse> data) {
         this.typeList.clear(); //Avoid duplicating data displayed on RecyclerView everytime do request
         this.typeList.addAll(data);
         notifyDataSetChanged();
     }
 
-    @Override
-    public int getItemCount() {
-        return typeList.size();
-    }
-
     public static class RecyclerViewViewHolder extends RecyclerView.ViewHolder {
+
         public TypeItemBinding typeItemBinding;
 
         public RecyclerViewViewHolder(TypeItemBinding typeItemBinding) {

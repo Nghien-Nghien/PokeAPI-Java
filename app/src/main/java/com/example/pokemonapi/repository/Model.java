@@ -7,6 +7,7 @@ import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
 import retrofit2.Call;
 
 public class Model implements Contracts.Model {
+
     private final RetrofitBuilder retrofitBuilder;
 
     public Model(RetrofitBuilder retrofitBuilder) {

@@ -10,6 +10,7 @@ import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 @Database(entities = {ResultsResponse.class, PokemonInfoAPI.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
+
     public abstract PokemonListDAO pokemonListDAO();
 
     public abstract PokemonInfoDAO pokemonInfoDAO();

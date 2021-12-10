@@ -11,6 +11,7 @@ import java.util.List;
 
 @Dao
 public interface PokemonListDAO {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertPokemonList(List<ResultsResponse> pokemonList);
 

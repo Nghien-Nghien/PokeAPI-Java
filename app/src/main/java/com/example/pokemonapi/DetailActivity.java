@@ -10,8 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.palette.graphics.Palette;
 
 import com.bumptech.glide.Glide;
-import com.example.pokemonapi.database.DatabaseBuilder;
-import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
 import com.example.pokemonapi.model.network.RetrofitBuilder;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
@@ -25,6 +23,7 @@ import com.github.florent37.glidepalette.GlidePalette;
 import java.util.List;
 
 public class DetailActivity extends AppCompatActivity implements Contracts.DetailView {
+
     public ActivityDetailBinding activityDetailBinding;
     public TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
     public DetailPresenter detailPresenter;
@@ -36,15 +35,24 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
         setContentView(activityDetailBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        activityDetailBinding.typeList.setHasFixedSize(true);
-        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(this, new TypeRecyclerViewListAdapter.TypeDiff());
-        activityDetailBinding.typeList.setAdapter(typeRecyclerViewListAdapter);
+        detailPresenter = new DetailPresenter(this, new Model(new RetrofitBuilder()));
 
         Intent intent = getIntent();
 
-        String namePoke = intent.getStringExtra("NamePoke");
-        String imagePoke = intent.getStringExtra("ImagePoke");
+        String namePoke = intent.getStringExtra(MainActivity.EXTRA_NAME_PARAM);
+        String imagePoke = intent.getStringExtra(MainActivity.EXTRA_IMAGE_PARAM);
 
+        setUpDataGetFromIntent(namePoke, imagePoke);
+        setUpRecyclerView();
+        setArrowButton(activityDetailBinding.arrow);
+        fetchPokemonInfo(namePoke);
+    }
+
+    public void fetchPokemonInfo(String namePoke) {
+        detailPresenter.fetchPokemonInfo(namePoke);
+    }
+
+    public void setUpDataGetFromIntent(String namePoke, String imagePoke) {
         activityDetailBinding.namePoke.setText(namePoke);
         Glide.with(this).load(imagePoke).placeholder(R.drawable.placeholder).into(activityDetailBinding.imagePoke);
 
@@ -61,16 +69,12 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
                                     }
                                 }).crossfade(true))
                 .into(activityDetailBinding.imagePoke);
-
-        PokemonInfoDAO pokemonInfoDAO = new DatabaseBuilder(this).databaseBuilder().pokemonInfoDAO();
-        detailPresenter = new DetailPresenter(this, new Model(new RetrofitBuilder()), pokemonInfoDAO, new PokemonInfoAPI());
-
-        setArrowButton(activityDetailBinding.arrow);
-        fetchPokemonInfo(namePoke);
     }
 
-    public void fetchPokemonInfo(String namePoke) {
-        detailPresenter.fetchPokemonInfo(namePoke);
+    public void setUpRecyclerView() {
+        activityDetailBinding.typeList.setHasFixedSize(true);
+        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(this, new TypeRecyclerViewListAdapter.TypeDiff());
+        activityDetailBinding.typeList.setAdapter(typeRecyclerViewListAdapter);
     }
 
     public void setArrowButton(ImageButton arrowButton) {
@@ -119,6 +123,11 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
     @Override
     public void onFailure(String errorCode) {
         Toast.makeText(DetailActivity.this, errorCode, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void toastForOfflineMode() {
+        Toast.makeText(DetailActivity.this, getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
     }
 
     @Override

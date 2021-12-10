@@ -3,6 +3,7 @@ package com.example.pokemonapi.model.pokemoninfo;
 import com.example.pokemonapi.R;
 
 public class PokemonTypeColor {
+
     int color;
 
     public Integer getTypeColor(String nameType) {
@@ -61,6 +62,7 @@ public class PokemonTypeColor {
             default:
                 color = R.color.white;
         }
+
         return color;
     }
 }
