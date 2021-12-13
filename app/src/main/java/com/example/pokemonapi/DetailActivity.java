@@ -153,4 +153,10 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); //The IMMERSIVE_STICKY use to hide Navigation Bar after short time don't touch on it
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        detailPresenter.getDisposableToUnsubscribe();
+    }
 }

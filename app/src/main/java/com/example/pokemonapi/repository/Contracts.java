@@ -7,14 +7,14 @@ import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 
 import java.util.List;
 
-import retrofit2.Call;
+import io.reactivex.rxjava3.core.Observable;
 
 public interface Contracts {
 
     interface Model {
-        Call<PokemonListAPI> callFetchPokemonList(int offset);
+        Observable<PokemonListAPI> observableFetchPokemonList(int offset);
 
-        Call<PokemonInfoAPI> callFetchPokemonInfo(String name);
+        Observable<PokemonInfoAPI> observableFetchPokemonInfo(String name);
     }
 
     interface MainPresenter {

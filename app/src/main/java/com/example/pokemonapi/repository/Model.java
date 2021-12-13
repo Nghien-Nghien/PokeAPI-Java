@@ -4,7 +4,7 @@ import com.example.pokemonapi.model.network.RetrofitBuilder;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
 
-import retrofit2.Call;
+import io.reactivex.rxjava3.core.Observable;
 
 public class Model implements Contracts.Model {
 
@@ -15,12 +15,12 @@ public class Model implements Contracts.Model {
     }
 
     @Override
-    public Call<PokemonListAPI> callFetchPokemonList(int offset) {
+    public Observable<PokemonListAPI> observableFetchPokemonList(int offset) {
         return retrofitBuilder.requestToApiInterface().fetchPokemonList(offset);
     }
 
     @Override
-    public Call<PokemonInfoAPI> callFetchPokemonInfo(String name) {
+    public Observable<PokemonInfoAPI> observableFetchPokemonInfo(String name) {
         return retrofitBuilder.requestToApiInterface().fetchPokemonInfo(name);
     }
 }

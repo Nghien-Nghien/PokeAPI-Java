@@ -91,7 +91,8 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
             public void onRefresh() {
                 pokemonRecyclerViewListAdapter.clearAllOldData();
                 fetchPokemonList(offset);
-                MainActivity.offset = 0;
+                MainActivity.offset = 0; // the offset need to be reset to 0 bcz
+                                        // the loadMoreOnRecyclerView method stored the value of the offset from last time scrolled
             }
         });
     }
@@ -150,5 +151,11 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
         intent.putExtra(EXTRA_NAME_PARAM, namePoke);
         intent.putExtra(EXTRA_IMAGE_PARAM, imagePoke);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mainPresenter.getDisposableToUnsubscribe();
     }
 }

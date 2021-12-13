@@ -10,23 +10,25 @@ import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DetailPresenter implements Contracts.DetailPresenter {
 
     private final Contracts.DetailView detailView;
     private final Contracts.Model model;
     private final PokemonInfoDAO pokemonInfoDAO;
-    private final PokemonInfoAPI basePerformance;
     private List<TypesResponse> typesData;
+    private Disposable disposable;
 
     public DetailPresenter(Contracts.DetailView detailView, Contracts.Model model) {
         this.detailView = detailView;
         this.model = model;
         pokemonInfoDAO = DatabaseBuilder.getINSTANCE().databaseBuilder().pokemonInfoDAO();
-        basePerformance = new PokemonInfoAPI();
     }
 
     @Override
@@ -35,62 +37,86 @@ public class DetailPresenter implements Contracts.DetailPresenter {
         detailView.showProgressBar();
         typesData = new ArrayList<>();
 
-        Call<PokemonInfoAPI> call = model.callFetchPokemonInfo(namePoke);
+        Observable<PokemonInfoAPI> pokemonInfoAPIObservable = model.observableFetchPokemonInfo(namePoke);
+        Observer<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
 
-        //noinspection NullableProblems
-        call.enqueue(new Callback<PokemonInfoAPI>() {
+        pokemonInfoAPIObservable.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(pokemonInfoAPIObserver);
+    }
+
+    private Observer<PokemonInfoAPI> getPokemonInfoAPIObserver(String namePoke) {
+        return new Observer<PokemonInfoAPI>() {
             @Override
-            public void onResponse(Call<PokemonInfoAPI> call, Response<PokemonInfoAPI> response) {
-                assert response.body() != null;
-
-                //Get these info: weight, height
-                PokemonInfoAPI baseInfo = response.body();
-
-                @SuppressLint("DefaultLocale") String heightFormatted = String.format("%.1f M", (float) baseInfo.getHeight() / 10);
-                @SuppressLint("DefaultLocale") String weightFormatted = String.format("%.1f KG", (float) baseInfo.getWeight() / 10);
-
-                //Get Base Performance
-                Float hpFormatted = (float) basePerformance.hp;
-                Float atkFormatted = (float) basePerformance.atk;
-                Float defFormatted = (float) basePerformance.def;
-                Float spdFormatted = (float) basePerformance.spd;
-                Float expFormatted = (float) basePerformance.exp;
-
-                String hpString = basePerformance.hpString;
-                String atkString = basePerformance.atkString;
-                String defString = basePerformance.defString;
-                String spdString = basePerformance.spdString;
-                String expString = basePerformance.expString;
-
-                //Get name of types Pokemon and Color Types
-                List<TypesResponse> typesList = response.body().getTypes();
-                for (int i = 0; i < typesList.size(); i++) {
-                    TypesResponse type = typesList.get(i);
-
-                    String nameType = type.getType().getName();
-
-                    typesData.add(new TypesResponse(nameType));
-                }
-
-                detailView.hideProgressBar();
-                detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
-                        hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
-                        hpString, atkString, defString, spdString, expString);
-                pokemonInfoDAO.insertPokemonInfo(new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
-                        hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
-                        hpString, atkString, defString, spdString, expString));
+            public void onSubscribe(@NonNull Disposable d) {
+                disposable = d;
             }
 
             @Override
-            public void onFailure(Call<PokemonInfoAPI> call, Throwable throwable) {
-                detailView.hideProgressBar();
-                detailView.onFailure(throwable.toString());
-
-                if (pokemonInfoDAO.getPokemonInfo(namePoke) != null) {
-                    detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
-                    detailView.toastForOfflineMode();
-                }
+            public void onNext(@NonNull PokemonInfoAPI pokemonInfoAPI) {
+                onResponseSuccess(pokemonInfoAPI, namePoke);
             }
-        });
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                onResponseFail(e, namePoke);
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+    }
+
+    private void onResponseSuccess(PokemonInfoAPI pokemonInfoAPI, String namePoke) {
+        //Get these info: weight, height
+        @SuppressLint("DefaultLocale") String heightFormatted = String.format("%.1f M", (float) pokemonInfoAPI.getHeight() / 10);
+        @SuppressLint("DefaultLocale") String weightFormatted = String.format("%.1f KG", (float) pokemonInfoAPI.getWeight() / 10);
+
+        //Get Base Performance
+        Float hpFormatted = (float) pokemonInfoAPI.hp;
+        Float atkFormatted = (float) pokemonInfoAPI.atk;
+        Float defFormatted = (float) pokemonInfoAPI.def;
+        Float spdFormatted = (float) pokemonInfoAPI.spd;
+        Float expFormatted = (float) pokemonInfoAPI.exp;
+
+        String hpString = pokemonInfoAPI.hpString;
+        String atkString = pokemonInfoAPI.atkString;
+        String defString = pokemonInfoAPI.defString;
+        String spdString = pokemonInfoAPI.spdString;
+        String expString = pokemonInfoAPI.expString;
+
+        //Get name of types Pokemon and Color Types
+        List<TypesResponse> typesList = pokemonInfoAPI.getTypes();
+        for (int i = 0; i < typesList.size(); i++) {
+            TypesResponse type = typesList.get(i);
+
+            String nameType = type.getType().getName();
+
+            typesData.add(new TypesResponse(nameType));
+        }
+
+        detailView.hideProgressBar();
+        detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
+                hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
+                hpString, atkString, defString, spdString, expString);
+        pokemonInfoDAO.insertPokemonInfo(new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
+                hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
+                hpString, atkString, defString, spdString, expString));
+    }
+
+    private void onResponseFail(Throwable e, String namePoke) {
+        detailView.hideProgressBar();
+        detailView.onFailure(e.toString());
+
+        if (pokemonInfoDAO.getPokemonInfo(namePoke) != null) {
+            detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
+            detailView.toastForOfflineMode();
+        }
+    }
+
+    public void getDisposableToUnsubscribe() {
+        disposable.dispose();
     }
 }
