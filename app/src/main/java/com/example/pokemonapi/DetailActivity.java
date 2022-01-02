@@ -11,12 +11,10 @@ import androidx.palette.graphics.Palette;
 
 import com.bumptech.glide.Glide;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
-import com.example.pokemonapi.model.network.RetrofitBuilder;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
 import com.example.pokemonapi.repository.Contracts;
 import com.example.pokemonapi.repository.DetailPresenter;
-import com.example.pokemonapi.repository.Model;
 import com.github.florent37.glidepalette.BitmapPalette;
 import com.github.florent37.glidepalette.GlidePalette;
 
@@ -35,7 +33,7 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
         setContentView(activityDetailBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        detailPresenter = new DetailPresenter(this, new Model(new RetrofitBuilder()));
+        detailPresenter = new DetailPresenter(this);
 
         Intent intent = getIntent();
 

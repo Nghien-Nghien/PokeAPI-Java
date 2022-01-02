@@ -6,9 +6,12 @@ import com.example.pokemonapi.database.DatabaseBuilder;
 import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
+import com.example.pokemonapi.network.APIClient;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
@@ -19,16 +22,20 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DetailPresenter implements Contracts.DetailPresenter {
 
-    private final Contracts.DetailView detailView;
-    private final Contracts.Model model;
-    private final PokemonInfoDAO pokemonInfoDAO;
+    private Contracts.DetailView detailView;
+    private APIClient apiClient;
+    private PokemonInfoDAO pokemonInfoDAO;
     private List<TypesResponse> typesData;
     private Disposable disposable;
 
-    public DetailPresenter(Contracts.DetailView detailView, Contracts.Model model) {
+    public DetailPresenter(Contracts.DetailView detailView) {
         this.detailView = detailView;
-        this.model = model;
         pokemonInfoDAO = DatabaseBuilder.getINSTANCE().databaseBuilder().pokemonInfoDAO();
+    }
+
+    @Inject
+    public DetailPresenter(APIClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     @Override
@@ -37,7 +44,7 @@ public class DetailPresenter implements Contracts.DetailPresenter {
         detailView.showProgressBar();
         typesData = new ArrayList<>();
 
-        Observable<PokemonInfoAPI> pokemonInfoAPIObservable = model.observableFetchPokemonInfo(namePoke);
+        Observable<PokemonInfoAPI> pokemonInfoAPIObservable = apiClient.observableFetchPokemonInfo(namePoke);
         Observer<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
 
         pokemonInfoAPIObservable.subscribeOn(Schedulers.io())

@@ -12,11 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.pokemonapi.databinding.ActivityMainBinding;
-import com.example.pokemonapi.model.network.RetrofitBuilder;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 import com.example.pokemonapi.repository.Contracts;
 import com.example.pokemonapi.repository.MainPresenter;
-import com.example.pokemonapi.repository.Model;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -44,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
         setContentView(activityMainBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        mainPresenter = new MainPresenter(this, new Model(new RetrofitBuilder()));
+        mainPresenter = new MainPresenter(this);
 
         setUpRecyclerView();
         loadMoreOnRecyclerView();

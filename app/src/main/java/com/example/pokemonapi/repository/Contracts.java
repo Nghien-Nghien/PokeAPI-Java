@@ -2,20 +2,11 @@ package com.example.pokemonapi.repository;
 
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
-import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 
 import java.util.List;
 
-import io.reactivex.rxjava3.core.Observable;
-
 public interface Contracts {
-
-    interface Model {
-        Observable<PokemonListAPI> observableFetchPokemonList(int offset);
-
-        Observable<PokemonInfoAPI> observableFetchPokemonInfo(String name);
-    }
 
     interface MainPresenter {
         void fetchPokemonList(int offset);
