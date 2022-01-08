@@ -3,12 +3,9 @@ package com.example.pokemonapi;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.palette.graphics.Palette;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -56,23 +53,15 @@ public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse,
         Glide.with(context).load(imagePoke)
                 .listener(
                         GlidePalette.with(imagePoke).use(BitmapPalette.Profile.MUTED_LIGHT)
-                                .intoCallBack(new BitmapPalette.CallBack() {
-                                    @Override
-                                    public void onPaletteLoaded(@Nullable Palette palette) {
-                                        if (palette != null && palette.getDominantSwatch() != null) {
-                                            int rgbHexCode = palette.getDominantSwatch().getRgb();
-                                            holder.pokemonItemBinding.cardView.setCardBackgroundColor(rgbHexCode);
-                                        }
+                                .intoCallBack(palette -> {
+                                    if (palette != null && palette.getDominantSwatch() != null) {
+                                        int rgbHexCode = palette.getDominantSwatch().getRgb();
+                                        holder.pokemonItemBinding.cardView.setCardBackgroundColor(rgbHexCode);
                                     }
                                 }).crossfade(true))
                 .into(holder.pokemonItemBinding.imagePoke);
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onItemClickListener.onClick(namePoke, imagePoke);
-            }
-        });
+        holder.itemView.setOnClickListener(view -> onItemClickListener.onClick(namePoke, imagePoke));
     }
 
     @Override

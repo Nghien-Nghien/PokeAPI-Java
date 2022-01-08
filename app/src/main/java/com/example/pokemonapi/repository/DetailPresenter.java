@@ -2,7 +2,7 @@ package com.example.pokemonapi.repository;
 
 import android.annotation.SuppressLint;
 
-import com.example.pokemonapi.database.DatabaseBuilder;
+import com.example.pokemonapi.App;
 import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
@@ -16,26 +16,23 @@ import javax.inject.Inject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DetailPresenter implements Contracts.DetailPresenter {
 
-    private Contracts.DetailView detailView;
-    private APIClient apiClient;
-    private PokemonInfoDAO pokemonInfoDAO;
+    private final Contracts.DetailView detailView;
+    @Inject
+    APIClient apiClient;
+    @Inject
+    PokemonInfoDAO pokemonInfoDAO;
     private List<TypesResponse> typesData;
-    private Disposable disposable;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public DetailPresenter(Contracts.DetailView detailView) {
         this.detailView = detailView;
-        pokemonInfoDAO = DatabaseBuilder.getINSTANCE().databaseBuilder().pokemonInfoDAO();
-    }
-
-    @Inject
-    public DetailPresenter(APIClient apiClient) {
-        this.apiClient = apiClient;
+        getInjection();
     }
 
     @Override
@@ -45,20 +42,18 @@ public class DetailPresenter implements Contracts.DetailPresenter {
         typesData = new ArrayList<>();
 
         Observable<PokemonInfoAPI> pokemonInfoAPIObservable = apiClient.observableFetchPokemonInfo(namePoke);
-        Observer<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
+        DisposableObserver<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
 
-        pokemonInfoAPIObservable.subscribeOn(Schedulers.io())
+        pokemonInfoAPIObservable
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(pokemonInfoAPIObserver);
+
+        compositeDisposable.add(pokemonInfoAPIObserver);
     }
 
-    private Observer<PokemonInfoAPI> getPokemonInfoAPIObserver(String namePoke) {
-        return new Observer<PokemonInfoAPI>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                disposable = d;
-            }
-
+    private DisposableObserver<PokemonInfoAPI> getPokemonInfoAPIObserver(String namePoke) {
+        return new DisposableObserver<PokemonInfoAPI>() {
             @Override
             public void onNext(@NonNull PokemonInfoAPI pokemonInfoAPI) {
                 onResponseSuccess(pokemonInfoAPI, namePoke);
@@ -124,6 +119,10 @@ public class DetailPresenter implements Contracts.DetailPresenter {
     }
 
     public void getDisposableToUnsubscribe() {
-        disposable.dispose();
+        compositeDisposable.dispose();
+    }
+
+    private void getInjection() {
+        App.getAppComponent().injectDetailPresenter(this);
     }
 }

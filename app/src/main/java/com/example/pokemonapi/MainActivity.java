@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.pokemonapi.databinding.ActivityMainBinding;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
@@ -84,14 +83,11 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
     }
 
     public void pullToRefresh(int offset) {
-        activityMainBinding.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                pokemonRecyclerViewListAdapter.clearAllOldData();
-                fetchPokemonList(offset);
-                MainActivity.offset = 0; // the offset need to be reset to 0 bcz
-                                        // the loadMoreOnRecyclerView method stored the value of the offset from last time scrolled
-            }
+        activityMainBinding.swipeRefreshLayout.setOnRefreshListener(() -> {
+            pokemonRecyclerViewListAdapter.clearAllOldData();
+            fetchPokemonList(offset);
+            MainActivity.offset = 0; // the offset need to be reset to 0 bcz
+            // the loadMoreOnRecyclerView method stored the value of the offset from last time scrolled
         });
     }
 
@@ -154,6 +150,8 @@ public class MainActivity extends AppCompatActivity implements Contracts.MainVie
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        activityMainBinding.pokemonList.clearOnScrollListeners();
+        MainActivity.offset = 0;
         mainPresenter.getDisposableToUnsubscribe();
     }
 }

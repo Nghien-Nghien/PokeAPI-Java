@@ -1,9 +1,7 @@
 package com.example.pokemonapi.repository;
 
-import com.example.pokemonapi.database.DatabaseBuilder;
+import com.example.pokemonapi.App;
 import com.example.pokemonapi.database.PokemonListDAO;
-import com.example.pokemonapi.di.DaggerRepositoryComponent;
-import com.example.pokemonapi.di.RepositoryComponent;
 import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 import com.example.pokemonapi.network.APIClient;
@@ -16,27 +14,23 @@ import javax.inject.Inject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class MainPresenter implements Contracts.MainPresenter {
 
-    private Contracts.MainView mainView;
-    private APIClient apiClient;
-    private PokemonListDAO pokemonListDAO;
+    private final Contracts.MainView mainView;
+    @Inject
+    APIClient apiClient;
+    @Inject
+    PokemonListDAO pokemonListDAO;
     private List<ResultsResponse> data;
-    private Disposable disposable;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public MainPresenter(Contracts.MainView mainView) {
         this.mainView = mainView;
-        pokemonListDAO = DatabaseBuilder.getINSTANCE().databaseBuilder().pokemonListDAO();
         getInjection();
-    }
-
-    @Inject
-    public MainPresenter(APIClient apiClient) {
-        this.apiClient = apiClient;
     }
 
     @Override
@@ -46,21 +40,18 @@ public class MainPresenter implements Contracts.MainPresenter {
         data = new ArrayList<>();
 
         Observable<PokemonListAPI> pokemonListAPIObservable = apiClient.observableFetchPokemonList(offset);
-        Observer<PokemonListAPI> pokemonListAPIObserver = getPokemonListAPIObserver(offset);
+        DisposableObserver<PokemonListAPI> pokemonListAPIObserver = getPokemonListAPIObserver(offset);
 
         pokemonListAPIObservable
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(pokemonListAPIObserver);
+
+        compositeDisposable.add(pokemonListAPIObserver);
     }
 
-    private Observer<PokemonListAPI> getPokemonListAPIObserver(int offset) {
-        return new Observer<PokemonListAPI>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                disposable = d;
-            }
-
+    private DisposableObserver<PokemonListAPI> getPokemonListAPIObserver(int offset) {
+        return new DisposableObserver<PokemonListAPI>() {
             @Override
             public void onNext(@NonNull PokemonListAPI pokemonListAPI) {
                 onResponseSuccess(pokemonListAPI, offset);
@@ -107,11 +98,10 @@ public class MainPresenter implements Contracts.MainPresenter {
     }
 
     public void getDisposableToUnsubscribe() {
-        disposable.dispose();
+        compositeDisposable.dispose();
     }
 
     private void getInjection() {
-        RepositoryComponent repositoryComponent = DaggerRepositoryComponent.create();
-        repositoryComponent.injectMainPresenter(this);
+        App.getAppComponent().injectMainPresenter(this);
     }
 }

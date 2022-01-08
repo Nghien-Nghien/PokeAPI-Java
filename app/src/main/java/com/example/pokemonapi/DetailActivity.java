@@ -7,7 +7,6 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.palette.graphics.Palette;
 
 import com.bumptech.glide.Glide;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
@@ -57,13 +56,10 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
         Glide.with(this).load(imagePoke)
                 .listener(
                         GlidePalette.with(imagePoke).use(BitmapPalette.Profile.MUTED_LIGHT)
-                                .intoCallBack(new BitmapPalette.CallBack() {
-                                    @Override
-                                    public void onPaletteLoaded(Palette palette) {
-                                        if (palette != null && palette.getDominantSwatch() != null) {
-                                            int rgbHexCode = palette.getDominantSwatch().getRgb();
-                                            activityDetailBinding.cardView.setCardBackgroundColor(rgbHexCode);
-                                        }
+                                .intoCallBack(palette -> {
+                                    if (palette != null && palette.getDominantSwatch() != null) {
+                                        int rgbHexCode = palette.getDominantSwatch().getRgb();
+                                        activityDetailBinding.cardView.setCardBackgroundColor(rgbHexCode);
                                     }
                                 }).crossfade(true))
                 .into(activityDetailBinding.imagePoke);
@@ -76,12 +72,7 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
     }
 
     public void setArrowButton(ImageButton arrowButton) {
-        arrowButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                finish();
-            }
-        });
+        arrowButton.setOnClickListener(view -> finish());
     }
 
     @Override
