@@ -1,4 +1,4 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.pokemonapi.R;
 import com.example.pokemonapi.databinding.PokemonItemBinding;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 import com.github.florent37.glidepalette.BitmapPalette;

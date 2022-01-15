@@ -1,29 +1,15 @@
 package com.example.pokemonapi;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.bumptech.glide.Glide;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
-import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
-import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
-import com.example.pokemonapi.repository.Contracts;
-import com.example.pokemonapi.repository.DetailPresenter;
-import com.github.florent37.glidepalette.BitmapPalette;
-import com.github.florent37.glidepalette.GlidePalette;
 
-import java.util.List;
-
-public class DetailActivity extends AppCompatActivity implements Contracts.DetailView {
+public class DetailActivity extends AppCompatActivity {
 
     public ActivityDetailBinding activityDetailBinding;
-    public TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
-    public DetailPresenter detailPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,101 +18,17 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
         setContentView(activityDetailBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        detailPresenter = new DetailPresenter(this);
+        String namePoke = getIntent().getExtras().getString(MainFragment.EXTRA_NAME_PARAM);
+        String imagePoke = getIntent().getExtras().getString(MainFragment.EXTRA_IMAGE_PARAM);
 
-        Intent intent = getIntent();
-
-        String namePoke = intent.getStringExtra(MainActivity.EXTRA_NAME_PARAM);
-        String imagePoke = intent.getStringExtra(MainActivity.EXTRA_IMAGE_PARAM);
-
-        setUpDataGetFromIntent(namePoke, imagePoke);
-        setUpRecyclerView();
-        setArrowButton(activityDetailBinding.arrow);
-        fetchPokemonInfo(namePoke);
+        setUpDetailFragment(namePoke, imagePoke);
     }
 
-    public void fetchPokemonInfo(String namePoke) {
-        detailPresenter.fetchPokemonInfo(namePoke);
-    }
-
-    public void setUpDataGetFromIntent(String namePoke, String imagePoke) {
-        activityDetailBinding.namePoke.setText(namePoke);
-        Glide.with(this).load(imagePoke).placeholder(R.drawable.placeholder).into(activityDetailBinding.imagePoke);
-
-        Glide.with(this).load(imagePoke)
-                .listener(
-                        GlidePalette.with(imagePoke).use(BitmapPalette.Profile.MUTED_LIGHT)
-                                .intoCallBack(palette -> {
-                                    if (palette != null && palette.getDominantSwatch() != null) {
-                                        int rgbHexCode = palette.getDominantSwatch().getRgb();
-                                        activityDetailBinding.cardView.setCardBackgroundColor(rgbHexCode);
-                                    }
-                                }).crossfade(true))
-                .into(activityDetailBinding.imagePoke);
-    }
-
-    public void setUpRecyclerView() {
-        activityDetailBinding.typeList.setHasFixedSize(true);
-        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(this, new TypeRecyclerViewListAdapter.TypeDiff());
-        activityDetailBinding.typeList.setAdapter(typeRecyclerViewListAdapter);
-    }
-
-    public void setArrowButton(ImageButton arrowButton) {
-        arrowButton.setOnClickListener(view -> finish());
-    }
-
-    @Override
-    public void onOnlineResponse(List<TypesResponse> types, String heightFormatted, String weightFormatted, Float hpFormatted, Float atkFormatted, Float defFormatted, Float spdFormatted, Float expFormatted, String hpString, String atkString, String defString, String spdString, String expString) {
-        typeRecyclerViewListAdapter.refreshTypeList(types);
-        activityDetailBinding.height.setText(heightFormatted);
-        activityDetailBinding.weight.setText(weightFormatted);
-        activityDetailBinding.progressHp.setProgress(hpFormatted);
-        activityDetailBinding.progressAtk.setProgress(atkFormatted);
-        activityDetailBinding.progressDef.setProgress(defFormatted);
-        activityDetailBinding.progressSpd.setProgress(spdFormatted);
-        activityDetailBinding.progressExp.setProgress(expFormatted);
-        activityDetailBinding.progressHp.setLabelText(hpString);
-        activityDetailBinding.progressAtk.setLabelText(atkString);
-        activityDetailBinding.progressDef.setLabelText(defString);
-        activityDetailBinding.progressSpd.setLabelText(spdString);
-        activityDetailBinding.progressExp.setLabelText(expString);
-    }
-
-    @Override
-    public void onOfflineResponse(PokemonInfoAPI dataOffline) {
-        typeRecyclerViewListAdapter.refreshTypeList(dataOffline.types);
-        activityDetailBinding.height.setText(dataOffline.heightFormatted);
-        activityDetailBinding.weight.setText(dataOffline.weightFormatted);
-        activityDetailBinding.progressHp.setProgress(dataOffline.hpFormatted);
-        activityDetailBinding.progressAtk.setProgress(dataOffline.atkFormatted);
-        activityDetailBinding.progressDef.setProgress(dataOffline.defFormatted);
-        activityDetailBinding.progressSpd.setProgress(dataOffline.spdFormatted);
-        activityDetailBinding.progressExp.setProgress(dataOffline.expFormatted);
-        activityDetailBinding.progressHp.setLabelText(dataOffline.hpString);
-        activityDetailBinding.progressAtk.setLabelText(dataOffline.atkString);
-        activityDetailBinding.progressDef.setLabelText(dataOffline.defString);
-        activityDetailBinding.progressSpd.setLabelText(dataOffline.spdString);
-        activityDetailBinding.progressExp.setLabelText(dataOffline.expString);
-    }
-
-    @Override
-    public void onFailure(String errorCode) {
-        Toast.makeText(DetailActivity.this, errorCode, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void toastForOfflineMode() {
-        Toast.makeText(DetailActivity.this, getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void showProgressBar() {
-        activityDetailBinding.progressBar.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void hideProgressBar() {
-        activityDetailBinding.progressBar.setVisibility(View.GONE);
+    public void setUpDetailFragment(String namePoke, String imagePoke) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainerView, new DetailFragment(namePoke, imagePoke))
+                .setReorderingAllowed(true)
+                .commit();
     }
 
     @Override
@@ -141,11 +43,5 @@ public class DetailActivity extends AppCompatActivity implements Contracts.Detai
                             | View.SYSTEM_UI_FLAG_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); //The IMMERSIVE_STICKY use to hide Navigation Bar after short time don't touch on it
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        detailPresenter.getDisposableToUnsubscribe();
     }
 }

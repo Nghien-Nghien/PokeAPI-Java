@@ -1,6 +1,6 @@
 package com.example.pokemonapi;
 
-import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.pokemonapi.adapters.PokemonRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentMainBinding;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 import com.example.pokemonapi.repository.Contracts;
@@ -21,7 +22,6 @@ import com.example.pokemonapi.repository.MainPresenter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Objects;
 
 public class MainFragment extends Fragment implements Contracts.MainView, PokemonRecyclerViewListAdapter.OnItemClickListener {
 
@@ -33,34 +33,32 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
     public int totalItemCount;
     public int pastVisibleItems;
     public int THRESHOLD = 4;
-    public static int offset = 0;
+    public int offset = 0;
     public boolean loading = true;
-    public OnItemClickListener onItemClickListener;
+    public static final String EXTRA_NAME_PARAM = "Name Pokemon";
+    public static final String EXTRA_IMAGE_PARAM = "Image Pokemon";
 
-    public Context context;
-    public MainFragment(Context context) {
+    public MainFragment() {
         // Required empty public constructor
-        this.context = context;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        fragmentMainBinding = FragmentMainBinding.inflate(getLayoutInflater());
-
         mainPresenter = new MainPresenter(this);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        fragmentMainBinding = FragmentMainBinding.inflate(inflater, container, false);
         setUpRecyclerView();
-        return inflater.inflate(R.layout.fragment_main, container, false);
+
+        return fragmentMainBinding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull @NotNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         loadMoreOnRecyclerView();
         fetchPokemonList(offset);
         pullToRefresh(offset);
@@ -68,7 +66,7 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
 
     public void setUpRecyclerView() {
         fragmentMainBinding.pokemonList.setHasFixedSize(true);
-        pokemonRecyclerViewListAdapter = new PokemonRecyclerViewListAdapter(context, this, new PokemonRecyclerViewListAdapter.PokemonDiff());
+        pokemonRecyclerViewListAdapter = new PokemonRecyclerViewListAdapter(getContext(), this, new PokemonRecyclerViewListAdapter.PokemonDiff());
         fragmentMainBinding.pokemonList.setAdapter(pokemonRecyclerViewListAdapter);
 
         gridLayoutManager = (GridLayoutManager) fragmentMainBinding.pokemonList.getLayoutManager();
@@ -88,11 +86,21 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
                     visibleItemCount = gridLayoutManager.getChildCount();
                     totalItemCount = gridLayoutManager.getItemCount();
                     pastVisibleItems = gridLayoutManager.findFirstVisibleItemPosition();
+                    boolean countItemsForLoadMore = pastVisibleItems + visibleItemCount == totalItemCount - THRESHOLD;
 
-                    if (loading && (pastVisibleItems + visibleItemCount == totalItemCount - THRESHOLD)) {
+                    if (loading && countItemsForLoadMore) {
                         loading = false;
                         offset += 20;
                         fetchPokemonList(offset);
+                    }
+
+                    if (pokemonRecyclerViewListAdapter.getItemCount() == (offset + 20) && countItemsForLoadMore) {
+                        loading = true;
+                    }
+
+                    if (pokemonRecyclerViewListAdapter.getItemCount() == offset && !recyclerView.canScrollVertically(1)) {
+                        offset -= 20;
+                        loading = true;
                     }
                 }
             }
@@ -103,7 +111,7 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
         fragmentMainBinding.swipeRefreshLayout.setOnRefreshListener(() -> {
             pokemonRecyclerViewListAdapter.clearAllOldData();
             fetchPokemonList(offset);
-            MainFragment.offset = 0; // the offset need to be reset to 0 bcz
+            this.offset = 0; // the offset need to be reset to 0 bcz
             // the loadMoreOnRecyclerView method stored the value of the offset from last time scrolled
         });
     }
@@ -117,19 +125,19 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
 
     @Override
     public void onOfflineResponse(List<ResultsResponse> dataOffline) {
-        loading = true;
         fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
         pokemonRecyclerViewListAdapter.refreshPokemonList(dataOffline);
     }
 
     @Override
     public void onFailure(String errorCode) {
-        Toast.makeText(getActivity(), errorCode, Toast.LENGTH_SHORT).show();
+        fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
+        Toast.makeText(getContext(), errorCode, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void toastForOfflineMode() {
-        Toast.makeText(getActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -144,18 +152,17 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
 
     @Override
     public void onClick(String namePoke, String imagePoke) {
-        onItemClickListener.onClick(namePoke, imagePoke);
+        Intent intent = new Intent(getActivity(), DetailActivity.class);
+        intent.putExtra(EXTRA_NAME_PARAM, namePoke);
+        intent.putExtra(EXTRA_IMAGE_PARAM, imagePoke);
+        startActivity(intent);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         fragmentMainBinding.pokemonList.clearOnScrollListeners();
-        MainFragment.offset = 0;
+        offset = 0;
         mainPresenter.getDisposableToUnsubscribe();
-    }
-
-    public interface OnItemClickListener {
-        void onClick(String namePoke, String imagePoke);
     }
 }

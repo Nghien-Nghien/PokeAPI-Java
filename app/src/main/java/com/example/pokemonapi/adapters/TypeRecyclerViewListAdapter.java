@@ -1,4 +1,4 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

@@ -1,6 +1,5 @@
 package com.example.pokemonapi;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
@@ -8,11 +7,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.pokemonapi.databinding.ActivityMainBinding;
 
-public class MainActivity extends AppCompatActivity implements MainFragment.OnItemClickListener {
+public class MainActivity extends AppCompatActivity {
 
     public ActivityMainBinding activityMainBinding;
-    public static final String EXTRA_NAME_PARAM = "Name Pokemon";
-    public static final String EXTRA_IMAGE_PARAM = "Image Pokemon";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,15 +18,14 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnIt
         setContentView(activityMainBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        setUpFragment(savedInstanceState);
+        setUpMainFragment();
     }
 
-    public void setUpFragment(Bundle savedInstanceState) {
-
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.fragmentContainerView, new MainFragment(this))
-                    .commit();
-
+    public void setUpMainFragment() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainerView, new MainFragment())
+                .setReorderingAllowed(true)
+                .commit();
     }
 
     @Override
@@ -44,13 +40,5 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnIt
                             | View.SYSTEM_UI_FLAG_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); //The IMMERSIVE_STICKY use to hide Navigation Bar after short time don't touch on it
         }
-    }
-
-    @Override
-    public void onClick(String namePoke, String imagePoke) {
-        Intent intent = new Intent(this, DetailActivity.class);
-        intent.putExtra(EXTRA_NAME_PARAM, namePoke);
-        intent.putExtra(EXTRA_IMAGE_PARAM, imagePoke);
-        startActivity(intent);
     }
 }
