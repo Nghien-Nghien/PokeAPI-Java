@@ -18,6 +18,9 @@
 <img src="https://user-images.githubusercontent.com/85010162/150537968-23b0f9fb-066b-4170-b1f6-5a76e0fd6d12.png"/>
 </p>
 
+## Demo on Youtube
+[![DemoVideo](https://user-images.githubusercontent.com/85010162/150553243-a18bcc55-ac49-49e2-9c17-a33ff4a9c8eb.png)](https://youtu.be/YDk_VD1i0oM "PokeAPI | Android - Java - MVP - ViewBinding - Dagger2 - Retrofit2 - RxJava3 - Room Database")
+
 ## Tech Stack & Open-Source Libraries
 - Architecture
   - MVP Architecture (Model – View – Presenter)
