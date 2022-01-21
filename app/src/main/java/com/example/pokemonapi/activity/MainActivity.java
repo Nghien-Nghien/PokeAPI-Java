@@ -1,27 +1,27 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.activity;
 
 import android.os.Bundle;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.pokemonapi.R;
 import com.example.pokemonapi.databinding.ActivityMainBinding;
+import com.example.pokemonapi.fragment.MainFragment;
 
 public class MainActivity extends AppCompatActivity {
-
-    public ActivityMainBinding activityMainBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        ActivityMainBinding activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(activityMainBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
         setUpMainFragment();
     }
 
-    public void setUpMainFragment() {
+    private void setUpMainFragment() {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainerView, new MainFragment())
                 .setReorderingAllowed(true)

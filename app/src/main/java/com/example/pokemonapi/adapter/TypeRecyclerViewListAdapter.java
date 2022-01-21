@@ -1,4 +1,4 @@
-package com.example.pokemonapi.adapters;
+package com.example.pokemonapi.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -21,7 +21,7 @@ import java.util.List;
 
 public class TypeRecyclerViewListAdapter extends ListAdapter<TypesResponse, TypeRecyclerViewListAdapter.RecyclerViewViewHolder> {
 
-    public PokemonTypeColor pokemonTypeColor = new PokemonTypeColor();
+    private final PokemonTypeColor pokemonTypeColor = new PokemonTypeColor();
     private final Context context;
     private final List<TypesResponse> typeList = new ArrayList<>();
 
@@ -60,7 +60,7 @@ public class TypeRecyclerViewListAdapter extends ListAdapter<TypesResponse, Type
 
     public static class RecyclerViewViewHolder extends RecyclerView.ViewHolder {
 
-        public TypeItemBinding typeItemBinding;
+        private final TypeItemBinding typeItemBinding;
 
         public RecyclerViewViewHolder(TypeItemBinding typeItemBinding) {
             super(typeItemBinding.getRoot());

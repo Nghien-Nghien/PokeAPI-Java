@@ -1,4 +1,4 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.fragment;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,7 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
-import com.example.pokemonapi.adapters.TypeRecyclerViewListAdapter;
+import com.example.pokemonapi.R;
+import com.example.pokemonapi.adapter.TypeRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentDetailBinding;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
 import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
@@ -27,11 +28,11 @@ import java.util.List;
 
 public class DetailFragment extends Fragment implements Contracts.DetailView {
 
-    public FragmentDetailBinding fragmentDetailBinding;
-    public TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
-    public DetailPresenter detailPresenter;
-    public String namePoke;
-    public String imagePoke;
+    private FragmentDetailBinding fragmentDetailBinding;
+    private TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
+    private DetailPresenter detailPresenter;
+    private final String namePoke;
+    private final String imagePoke;
 
     public DetailFragment(String namePoke, String imagePoke) {
         this.namePoke = namePoke;
@@ -60,13 +61,13 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
         fetchPokemonInfo(namePoke);
     }
 
-    public void setUpRecyclerView() {
+    private void setUpRecyclerView() {
         fragmentDetailBinding.typeList.setHasFixedSize(true);
         typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(getContext(), new TypeRecyclerViewListAdapter.TypeDiff());
         fragmentDetailBinding.typeList.setAdapter(typeRecyclerViewListAdapter);
     }
 
-    public void setUpDataGetFromMainFragment(String namePoke, String imagePoke) {
+    private void setUpDataGetFromMainFragment(String namePoke, String imagePoke) {
         fragmentDetailBinding.namePoke.setText(namePoke);
         Glide.with(this).load(imagePoke).placeholder(R.drawable.placeholder).into(fragmentDetailBinding.imagePoke);
 
@@ -82,7 +83,7 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
                 .into(fragmentDetailBinding.imagePoke);
     }
 
-    public void setArrowButton(ImageButton arrowButton) {
+    private void setArrowButton(ImageButton arrowButton) {
         arrowButton.setOnClickListener(view -> {
             if (getActivity() != null) {
                 getActivity().finish();
@@ -90,7 +91,7 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
         });
     }
 
-    public void fetchPokemonInfo(String namePoke) {
+    private void fetchPokemonInfo(String namePoke) {
         detailPresenter.fetchPokemonInfo(namePoke);
     }
 

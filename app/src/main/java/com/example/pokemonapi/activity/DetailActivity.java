@@ -1,20 +1,21 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.activity;
 
 import android.os.Bundle;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.pokemonapi.R;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
+import com.example.pokemonapi.fragment.DetailFragment;
+import com.example.pokemonapi.fragment.MainFragment;
 
 public class DetailActivity extends AppCompatActivity {
-
-    public ActivityDetailBinding activityDetailBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        activityDetailBinding = ActivityDetailBinding.inflate(getLayoutInflater());
+        ActivityDetailBinding activityDetailBinding = ActivityDetailBinding.inflate(getLayoutInflater());
         setContentView(activityDetailBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
@@ -24,7 +25,7 @@ public class DetailActivity extends AppCompatActivity {
         setUpDetailFragment(namePoke, imagePoke);
     }
 
-    public void setUpDetailFragment(String namePoke, String imagePoke) {
+    private void setUpDetailFragment(String namePoke, String imagePoke) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainerView, new DetailFragment(namePoke, imagePoke))
                 .setReorderingAllowed(true)

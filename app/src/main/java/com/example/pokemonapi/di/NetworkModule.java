@@ -20,7 +20,7 @@ public class NetworkModule {
 
     @Provides
     @Singleton
-    public OkHttpClient provideOkHttpClient() {
+    OkHttpClient provideOkHttpClient() {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -31,7 +31,7 @@ public class NetworkModule {
 
     @Provides
     @Singleton
-    public Retrofit provideRetrofit(OkHttpClient okHttpClient) {
+    Retrofit provideRetrofit(OkHttpClient okHttpClient) {
         return new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(okHttpClient)
@@ -42,13 +42,13 @@ public class NetworkModule {
 
     @Provides
     @Singleton
-    public APIService provideAPIService(Retrofit retrofit) {
+    APIService provideAPIService(Retrofit retrofit) {
         return retrofit.create(APIService.class);
     }
 
     @Provides
     @Singleton
-    public APIClient provideAPIClient(APIService apiService) {
+    APIClient provideAPIClient(APIService apiService) {
         return new APIClient(apiService);
     }
 }

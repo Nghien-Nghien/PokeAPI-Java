@@ -1,4 +1,4 @@
-package com.example.pokemonapi.adapters;
+package com.example.pokemonapi.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -82,7 +82,7 @@ public class PokemonRecyclerViewListAdapter extends ListAdapter<ResultsResponse,
 
     public static class RecyclerViewViewHolder extends RecyclerView.ViewHolder {
 
-        public PokemonItemBinding pokemonItemBinding;
+        private final PokemonItemBinding pokemonItemBinding;
 
         public RecyclerViewViewHolder(PokemonItemBinding pokemonItemBinding) {
             super(pokemonItemBinding.getRoot());

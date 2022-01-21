@@ -15,6 +15,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -42,12 +43,12 @@ public class MainPresenter implements Contracts.MainPresenter {
         Observable<PokemonListAPI> pokemonListAPIObservable = apiClient.observableFetchPokemonList(offset);
         DisposableObserver<PokemonListAPI> pokemonListAPIObserver = getPokemonListAPIObserver(offset);
 
-        pokemonListAPIObservable
+        Disposable disposableFetchData = pokemonListAPIObservable
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(pokemonListAPIObserver);
+                .subscribeWith(pokemonListAPIObserver);
 
-        compositeDisposable.add(pokemonListAPIObserver);
+        compositeDisposable.add(disposableFetchData);
     }
 
     private DisposableObserver<PokemonListAPI> getPokemonListAPIObserver(int offset) {
@@ -84,7 +85,8 @@ public class MainPresenter implements Contracts.MainPresenter {
 
         mainView.hideProgressBar();
         mainView.onOnlineResponse(data);
-        pokemonListDAO.insertPokemonList(data);
+
+        onInsertPokemonListIntoDatabase(data);
     }
 
     private void onResponseFail(Throwable e, int offset) {
@@ -95,6 +97,17 @@ public class MainPresenter implements Contracts.MainPresenter {
             mainView.onOfflineResponse(pokemonListDAO.getPokemonList(offset));
             mainView.toastForOfflineMode();
         }
+    }
+
+    private void onInsertPokemonListIntoDatabase(List<ResultsResponse> pokemonList) {
+        Observable<List<ResultsResponse>> observable = Observable.just(pokemonList);
+
+        Disposable disposableInsertData = observable
+                .doOnNext(resultsResponses -> pokemonListDAO.insertPokemonList(resultsResponses))
+                .subscribeOn(Schedulers.io())
+                .subscribe();
+
+        compositeDisposable.add(disposableInsertData);
     }
 
     public void getDisposableToUnsubscribe() {

@@ -24,13 +24,13 @@ public class DatabaseModule {
 
     @Provides
     @Singleton
-    public Application provideApplication() {
+    Application provideApplication() {
         return application;
     }
 
     @Provides
     @Singleton
-    public AppDatabase provideAppDatabase(Application application) {
+    AppDatabase provideAppDatabase(Application application) {
         return Room.databaseBuilder(application, AppDatabase.class, "PokemonDatabase")
                 .fallbackToDestructiveMigration()
                 .allowMainThreadQueries()
@@ -39,13 +39,13 @@ public class DatabaseModule {
 
     @Provides
     @Singleton
-    public PokemonListDAO providePokemonListDAO(AppDatabase appDatabase) {
+    PokemonListDAO providePokemonListDAO(AppDatabase appDatabase) {
         return appDatabase.pokemonListDAO();
     }
 
     @Provides
     @Singleton
-    public PokemonInfoDAO providePokemonInfoDAO(AppDatabase appDatabase) {
+    PokemonInfoDAO providePokemonInfoDAO(AppDatabase appDatabase) {
         return appDatabase.pokemonInfoDAO();
     }
 }

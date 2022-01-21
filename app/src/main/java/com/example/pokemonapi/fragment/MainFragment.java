@@ -1,7 +1,9 @@
-package com.example.pokemonapi;
+package com.example.pokemonapi.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +15,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.pokemonapi.adapters.PokemonRecyclerViewListAdapter;
+import com.example.pokemonapi.R;
+import com.example.pokemonapi.activity.DetailActivity;
+import com.example.pokemonapi.adapter.PokemonRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentMainBinding;
 import com.example.pokemonapi.model.pokemonlist.ResultsResponse;
 import com.example.pokemonapi.repository.Contracts;
@@ -25,16 +29,16 @@ import java.util.List;
 
 public class MainFragment extends Fragment implements Contracts.MainView, PokemonRecyclerViewListAdapter.OnItemClickListener {
 
-    public FragmentMainBinding fragmentMainBinding;
-    public PokemonRecyclerViewListAdapter pokemonRecyclerViewListAdapter;
-    public GridLayoutManager gridLayoutManager;
-    public MainPresenter mainPresenter;
-    public int visibleItemCount;
-    public int totalItemCount;
-    public int pastVisibleItems;
-    public int THRESHOLD = 4;
-    public int offset = 0;
-    public boolean loading = true;
+    private FragmentMainBinding fragmentMainBinding;
+    private PokemonRecyclerViewListAdapter pokemonRecyclerViewListAdapter;
+    private GridLayoutManager gridLayoutManager;
+    private MainPresenter mainPresenter;
+    private int visibleItemCount;
+    private int totalItemCount;
+    private int pastVisibleItems;
+    private final int THRESHOLD = 4;
+    private int offset = 0;
+    private boolean loading = true;
     public static final String EXTRA_NAME_PARAM = "Name Pokemon";
     public static final String EXTRA_IMAGE_PARAM = "Image Pokemon";
 
@@ -64,7 +68,7 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
         pullToRefresh(offset);
     }
 
-    public void setUpRecyclerView() {
+    private void setUpRecyclerView() {
         fragmentMainBinding.pokemonList.setHasFixedSize(true);
         pokemonRecyclerViewListAdapter = new PokemonRecyclerViewListAdapter(getContext(), this, new PokemonRecyclerViewListAdapter.PokemonDiff());
         fragmentMainBinding.pokemonList.setAdapter(pokemonRecyclerViewListAdapter);
@@ -72,11 +76,11 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
         gridLayoutManager = (GridLayoutManager) fragmentMainBinding.pokemonList.getLayoutManager();
     }
 
-    public void fetchPokemonList(int offset) {
+    private void fetchPokemonList(int offset) {
         mainPresenter.fetchPokemonList(offset);
     }
 
-    public void loadMoreOnRecyclerView() {
+    private void loadMoreOnRecyclerView() {
         fragmentMainBinding.pokemonList.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull @NotNull RecyclerView recyclerView, int dx, int dy) {
@@ -94,20 +98,33 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
                         fetchPokemonList(offset);
                     }
 
-                    if (pokemonRecyclerViewListAdapter.getItemCount() == (offset + 20) && countItemsForLoadMore) {
+                    if (pokemonRecyclerViewListAdapter.getItemCount() == (offset + 20) && recyclerView.canScrollVertically(1)) {
                         loading = true;
                     }
 
                     if (pokemonRecyclerViewListAdapter.getItemCount() == offset && !recyclerView.canScrollVertically(1)) {
-                        offset -= 20;
-                        loading = true;
+                        setDelayForLoadMoreOnRecyclerView(offset);
                     }
                 }
             }
         });
     }
 
-    public void pullToRefresh(int offset) {
+    private void setDelayForLoadMoreOnRecyclerView(int currentOffsetValue) {
+        HandlerThread handlerThread = new HandlerThread("DelayThread");
+        handlerThread.start();
+
+        Handler handler = new Handler(handlerThread.getLooper());
+        handler.postDelayed(() -> {
+            if (pokemonRecyclerViewListAdapter.getItemCount() == currentOffsetValue) {
+                offset -= 20;
+                loading = true;
+                handlerThread.quitSafely();
+            }
+        }, 7000);
+    }
+
+    private void pullToRefresh(int offset) {
         fragmentMainBinding.swipeRefreshLayout.setOnRefreshListener(() -> {
             pokemonRecyclerViewListAdapter.clearAllOldData();
             fetchPokemonList(offset);
