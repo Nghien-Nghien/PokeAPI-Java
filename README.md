@@ -22,9 +22,11 @@
 [![DemoVideo](https://user-images.githubusercontent.com/85010162/150553243-a18bcc55-ac49-49e2-9c17-a33ff4a9c8eb.png)](https://youtu.be/YDk_VD1i0oM "PokeAPI | Android - Java - MVP - ViewBinding - Dagger2 - Retrofit2 - RxJava3 - Room Database")
 
 ## Tech Stack & Open-Source Libraries
-- Architecture
+- Architectures & Components
   - MVP Architecture (Model – View – Presenter)
-  - View Binding - A feature that allows you to more easily write code that interacts with views.
+  - ViewModel - Allows data to survive configuration changes such as screen rotations.
+  - LiveData - An observable data holder class.
+  - ViewBinding - A feature that allows you to more easily write code that interacts with views.
   - SwipeRefreshLayout - Implement the swipe-to-refresh UI pattern.
 - The Room persistence - Provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite.
 - [Retrofit2 & OkHttp3](https://github.com/square/retrofit) - A type-safe HTTP client for Android and the JVM.
