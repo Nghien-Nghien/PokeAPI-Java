@@ -4,45 +4,52 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.example.pokemonapi.R;
 import com.example.pokemonapi.adapter.TypeRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentDetailBinding;
-import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
-import com.example.pokemonapi.model.pokemoninfo.TypesResponse;
 import com.example.pokemonapi.repository.Contracts;
 import com.example.pokemonapi.repository.DetailPresenter;
+import com.example.pokemonapi.viewmodel.DetailViewModel;
 import com.github.florent37.glidepalette.BitmapPalette;
 import com.github.florent37.glidepalette.GlidePalette;
 
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public class DetailFragment extends Fragment implements Contracts.DetailView {
 
     private FragmentDetailBinding fragmentDetailBinding;
     private TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
     private DetailPresenter detailPresenter;
-    private final String namePoke;
-    private final String imagePoke;
+    private DetailViewModel detailViewModel;
+    private String namePoke;
+    private String imagePoke;
+    private final String STATE_NAME = "Current Name";
+    private final String STATE_IMAGE = "Current Image";
 
-    public DetailFragment(String namePoke, String imagePoke) {
-        this.namePoke = namePoke;
-        this.imagePoke = imagePoke;
+    public DetailFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         detailPresenter = new DetailPresenter(this);
+
+        if (savedInstanceState == null) {
+            namePoke = requireActivity().getIntent().getExtras().getString(MainFragment.EXTRA_NAME_PARAM);
+            imagePoke = requireActivity().getIntent().getExtras().getString(MainFragment.EXTRA_IMAGE_PARAM);
+        } else {
+            namePoke = savedInstanceState.getString(STATE_NAME);
+            imagePoke = savedInstanceState.getString(STATE_IMAGE);
+        }
     }
 
     @Override
@@ -56,18 +63,30 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
     @Override
     public void onViewCreated(@NonNull @NotNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        setUpDataGetFromMainFragment(namePoke, imagePoke);
-        setArrowButton(fragmentDetailBinding.arrow);
-        fetchPokemonInfo(namePoke);
+        setUpDataGetFromMainFragment();
+        setArrowButton();
+        updateDataForUI();
+        handleOnBackPressed();
+
+        if (savedInstanceState == null) {
+            fetchPokemonInfo(namePoke);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull @NotNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_NAME, namePoke);
+        outState.putString(STATE_IMAGE, imagePoke);
     }
 
     private void setUpRecyclerView() {
         fragmentDetailBinding.typeList.setHasFixedSize(true);
-        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(getContext(), new TypeRecyclerViewListAdapter.TypeDiff());
+        typeRecyclerViewListAdapter = new TypeRecyclerViewListAdapter(requireActivity(), new TypeRecyclerViewListAdapter.TypeDiff());
         fragmentDetailBinding.typeList.setAdapter(typeRecyclerViewListAdapter);
     }
 
-    private void setUpDataGetFromMainFragment(String namePoke, String imagePoke) {
+    private void setUpDataGetFromMainFragment() {
         fragmentDetailBinding.namePoke.setText(namePoke);
         Glide.with(this).load(imagePoke).placeholder(R.drawable.placeholder).into(fragmentDetailBinding.imagePoke);
 
@@ -83,11 +102,10 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
                 .into(fragmentDetailBinding.imagePoke);
     }
 
-    private void setArrowButton(ImageButton arrowButton) {
-        arrowButton.setOnClickListener(view -> {
-            if (getActivity() != null) {
-                getActivity().finish();
-            }
+    private void setArrowButton() {
+        fragmentDetailBinding.arrow.setOnClickListener(view -> {
+            detailViewModel.getLiveData().removeObservers(getViewLifecycleOwner());
+            requireActivity().finish();
         });
     }
 
@@ -95,48 +113,45 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
         detailPresenter.fetchPokemonInfo(namePoke);
     }
 
-    @Override
-    public void onOnlineResponse(List<TypesResponse> types, String heightFormatted, String weightFormatted, Float hpFormatted, Float atkFormatted, Float defFormatted, Float spdFormatted, Float expFormatted, String hpString, String atkString, String defString, String spdString, String expString) {
-        typeRecyclerViewListAdapter.refreshTypeList(types);
-        fragmentDetailBinding.height.setText(heightFormatted);
-        fragmentDetailBinding.weight.setText(weightFormatted);
-        fragmentDetailBinding.progressHp.setProgress(hpFormatted);
-        fragmentDetailBinding.progressAtk.setProgress(atkFormatted);
-        fragmentDetailBinding.progressDef.setProgress(defFormatted);
-        fragmentDetailBinding.progressSpd.setProgress(spdFormatted);
-        fragmentDetailBinding.progressExp.setProgress(expFormatted);
-        fragmentDetailBinding.progressHp.setLabelText(hpString);
-        fragmentDetailBinding.progressAtk.setLabelText(atkString);
-        fragmentDetailBinding.progressDef.setLabelText(defString);
-        fragmentDetailBinding.progressSpd.setLabelText(spdString);
-        fragmentDetailBinding.progressExp.setLabelText(expString);
+    private void updateDataForUI() {
+        detailViewModel = new ViewModelProvider(requireActivity()).get(DetailViewModel.class);
+        detailViewModel.getLiveData().observe(getViewLifecycleOwner(), pokemonInfoAPI -> {
+            if (namePoke.equals(pokemonInfoAPI.name)) {
+                typeRecyclerViewListAdapter.refreshTypeList(pokemonInfoAPI.types);
+                fragmentDetailBinding.height.setText(pokemonInfoAPI.heightFormatted);
+                fragmentDetailBinding.weight.setText(pokemonInfoAPI.weightFormatted);
+                fragmentDetailBinding.progressHp.setProgress(pokemonInfoAPI.hpFormatted);
+                fragmentDetailBinding.progressAtk.setProgress(pokemonInfoAPI.atkFormatted);
+                fragmentDetailBinding.progressDef.setProgress(pokemonInfoAPI.defFormatted);
+                fragmentDetailBinding.progressSpd.setProgress(pokemonInfoAPI.spdFormatted);
+                fragmentDetailBinding.progressExp.setProgress(pokemonInfoAPI.expFormatted);
+                fragmentDetailBinding.progressHp.setLabelText(pokemonInfoAPI.hpString);
+                fragmentDetailBinding.progressAtk.setLabelText(pokemonInfoAPI.atkString);
+                fragmentDetailBinding.progressDef.setLabelText(pokemonInfoAPI.defString);
+                fragmentDetailBinding.progressSpd.setLabelText(pokemonInfoAPI.spdString);
+                fragmentDetailBinding.progressExp.setLabelText(pokemonInfoAPI.expString);
+            }
+        });
     }
 
-    @Override
-    public void onOfflineResponse(PokemonInfoAPI dataOffline) {
-        typeRecyclerViewListAdapter.refreshTypeList(dataOffline.types);
-        fragmentDetailBinding.height.setText(dataOffline.heightFormatted);
-        fragmentDetailBinding.weight.setText(dataOffline.weightFormatted);
-        fragmentDetailBinding.progressHp.setProgress(dataOffline.hpFormatted);
-        fragmentDetailBinding.progressAtk.setProgress(dataOffline.atkFormatted);
-        fragmentDetailBinding.progressDef.setProgress(dataOffline.defFormatted);
-        fragmentDetailBinding.progressSpd.setProgress(dataOffline.spdFormatted);
-        fragmentDetailBinding.progressExp.setProgress(dataOffline.expFormatted);
-        fragmentDetailBinding.progressHp.setLabelText(dataOffline.hpString);
-        fragmentDetailBinding.progressAtk.setLabelText(dataOffline.atkString);
-        fragmentDetailBinding.progressDef.setLabelText(dataOffline.defString);
-        fragmentDetailBinding.progressSpd.setLabelText(dataOffline.spdString);
-        fragmentDetailBinding.progressExp.setLabelText(dataOffline.expString);
+    private void handleOnBackPressed() {
+        requireActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                detailViewModel.getLiveData().removeObservers(getViewLifecycleOwner());
+                requireActivity().finish();
+            }
+        });
     }
 
     @Override
     public void onFailure(String errorCode) {
-        Toast.makeText(getContext(), errorCode, Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireActivity(), errorCode, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void toastForOfflineMode() {
-        Toast.makeText(getContext(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.pokemonapi.R;
 import com.example.pokemonapi.databinding.ActivityDetailBinding;
 import com.example.pokemonapi.fragment.DetailFragment;
-import com.example.pokemonapi.fragment.MainFragment;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -19,15 +18,14 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(activityDetailBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        String namePoke = getIntent().getExtras().getString(MainFragment.EXTRA_NAME_PARAM);
-        String imagePoke = getIntent().getExtras().getString(MainFragment.EXTRA_IMAGE_PARAM);
-
-        setUpDetailFragment(namePoke, imagePoke);
+        if (savedInstanceState == null) {
+            setUpDetailFragment();
+        }
     }
 
-    private void setUpDetailFragment(String namePoke, String imagePoke) {
+    private void setUpDetailFragment() {
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragmentContainerView, new DetailFragment(namePoke, imagePoke))
+                .replace(R.id.fragmentContainerView, new DetailFragment())
                 .setReorderingAllowed(true)
                 .commit();
     }

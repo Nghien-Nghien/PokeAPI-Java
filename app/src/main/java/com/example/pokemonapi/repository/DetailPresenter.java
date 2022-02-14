@@ -2,6 +2,9 @@ package com.example.pokemonapi.repository;
 
 import android.annotation.SuppressLint;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.example.pokemonapi.App;
 import com.example.pokemonapi.database.PokemonInfoDAO;
 import com.example.pokemonapi.model.pokemoninfo.PokemonInfoAPI;
@@ -23,12 +26,13 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DetailPresenter implements Contracts.DetailPresenter {
 
-    private final Contracts.DetailView detailView;
     @Inject
     APIClient apiClient;
     @Inject
     PokemonInfoDAO pokemonInfoDAO;
-    private List<TypesResponse> typesData;
+    private final Contracts.DetailView detailView;
+    private final List<TypesResponse> typesData = new ArrayList<>();
+    private final static MutableLiveData<PokemonInfoAPI> mutableLiveData = new MutableLiveData<>();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public DetailPresenter(Contracts.DetailView detailView) {
@@ -40,7 +44,6 @@ public class DetailPresenter implements Contracts.DetailPresenter {
     public void fetchPokemonInfo(String namePoke) {
         //pokemonInfoDAO.deleteAll(); // use to clear old database
         detailView.showProgressBar();
-        typesData = new ArrayList<>();
 
         Observable<PokemonInfoAPI> pokemonInfoAPIObservable = apiClient.observableFetchPokemonInfo(namePoke);
         DisposableObserver<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
@@ -92,6 +95,7 @@ public class DetailPresenter implements Contracts.DetailPresenter {
 
         //Get name of types Pokemon and Color Types
         List<TypesResponse> typesList = pokemonInfoAPI.getTypes();
+
         for (int i = 0; i < typesList.size(); i++) {
             TypesResponse type = typesList.get(i);
 
@@ -100,23 +104,22 @@ public class DetailPresenter implements Contracts.DetailPresenter {
             typesData.add(new TypesResponse(nameType));
         }
 
-        detailView.hideProgressBar();
-        detailView.onOnlineResponse(typesData, heightFormatted, weightFormatted,
-                hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
-                hpString, atkString, defString, spdString, expString);
-
         PokemonInfoAPI pokemonInfo = new PokemonInfoAPI(namePoke, typesData, heightFormatted, weightFormatted,
                 hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
                 hpString, atkString, defString, spdString, expString);
+
+        detailView.hideProgressBar();
+        mutableLiveData.setValue(pokemonInfo);
         onInsertPokemonInfoIntoDatabase(pokemonInfo);
     }
 
     private void onResponseFail(Throwable e, String namePoke) {
         detailView.hideProgressBar();
-        detailView.onFailure(e.toString());
 
-        if (pokemonInfoDAO.getPokemonInfo(namePoke) != null) {
-            detailView.onOfflineResponse(pokemonInfoDAO.getPokemonInfo(namePoke));
+        if (pokemonInfoDAO.getPokemonInfo(namePoke) == null) {
+            detailView.onFailure(e.toString());
+        } else {
+            mutableLiveData.setValue(pokemonInfoDAO.getPokemonInfo(namePoke));
             detailView.toastForOfflineMode();
         }
     }
@@ -132,11 +135,15 @@ public class DetailPresenter implements Contracts.DetailPresenter {
         compositeDisposable.add(disposableInsertData);
     }
 
-    public void getDisposableToUnsubscribe() {
-        compositeDisposable.dispose();
-    }
-
     private void getInjection() {
         App.getAppComponent().injectDetailPresenter(this);
+    }
+
+    public static LiveData<PokemonInfoAPI> getLiveData() {
+        return mutableLiveData;
+    }
+
+    public void getDisposableToUnsubscribe() {
+        compositeDisposable.dispose();
     }
 }

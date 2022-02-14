@@ -18,7 +18,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(activityMainBinding.getRoot());
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        setUpMainFragment();
+        if (savedInstanceState == null) {
+            setUpMainFragment();
+        }
     }
 
     private void setUpMainFragment() {

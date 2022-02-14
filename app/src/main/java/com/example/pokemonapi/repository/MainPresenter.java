@@ -1,5 +1,8 @@
 package com.example.pokemonapi.repository;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.example.pokemonapi.App;
 import com.example.pokemonapi.database.PokemonListDAO;
 import com.example.pokemonapi.model.pokemonlist.PokemonListAPI;
@@ -21,12 +24,13 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class MainPresenter implements Contracts.MainPresenter {
 
-    private final Contracts.MainView mainView;
     @Inject
     APIClient apiClient;
     @Inject
     PokemonListDAO pokemonListDAO;
-    private List<ResultsResponse> data;
+    private final Contracts.MainView mainView;
+    private final List<ResultsResponse> pokemonList = new ArrayList<>();
+    private final static MutableLiveData<List<ResultsResponse>> mutableLiveData = new MutableLiveData<>();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public MainPresenter(Contracts.MainView mainView) {
@@ -38,7 +42,6 @@ public class MainPresenter implements Contracts.MainPresenter {
     public void fetchPokemonList(int offset) {
         //pokemonListDAO.deleteAll(); // use to clear old database
         mainView.showProgressBar();
-        data = new ArrayList<>();
 
         Observable<PokemonListAPI> pokemonListAPIObservable = apiClient.observableFetchPokemonList(offset);
         DisposableObserver<PokemonListAPI> pokemonListAPIObserver = getPokemonListAPIObserver(offset);
@@ -71,6 +74,8 @@ public class MainPresenter implements Contracts.MainPresenter {
     }
 
     private void onResponseSuccess(PokemonListAPI pokemonListAPI, int offset) {
+        pokemonList.clear();
+
         List<ResultsResponse> resultsList = pokemonListAPI.getResults();
 
         for (int i = 0; i < resultsList.size(); i++) {
@@ -80,21 +85,23 @@ public class MainPresenter implements Contracts.MainPresenter {
 
             String urlPoke = result.getUrl().replaceFirst(".$", "").substring(33);
 
-            data.add(new ResultsResponse(offset, namePoke, urlPoke));
+            pokemonList.add(new ResultsResponse(offset, namePoke, urlPoke));
         }
 
         mainView.hideProgressBar();
-        mainView.onOnlineResponse(data);
-
-        onInsertPokemonListIntoDatabase(data);
+        mutableLiveData.setValue(pokemonList);
+        mainView.setRefreshingForSwipeRefreshLayout();
+        onInsertPokemonListIntoDatabase(pokemonList);
     }
 
     private void onResponseFail(Throwable e, int offset) {
         mainView.hideProgressBar();
-        mainView.onFailure(e.toString());
 
-        if (pokemonListDAO.getPokemonList(offset) != null) {
-            mainView.onOfflineResponse(pokemonListDAO.getPokemonList(offset));
+        if (pokemonListDAO.getPokemonList(offset).isEmpty()) {
+            mainView.onFailure(e.toString());
+        } else {
+            mutableLiveData.setValue(pokemonListDAO.getPokemonList(offset));
+            mainView.setRefreshingForSwipeRefreshLayout();
             mainView.toastForOfflineMode();
         }
     }
@@ -110,11 +117,15 @@ public class MainPresenter implements Contracts.MainPresenter {
         compositeDisposable.add(disposableInsertData);
     }
 
-    public void getDisposableToUnsubscribe() {
-        compositeDisposable.dispose();
-    }
-
     private void getInjection() {
         App.getAppComponent().injectMainPresenter(this);
+    }
+
+    public static LiveData<List<ResultsResponse>> getLiveData() {
+        return mutableLiveData;
+    }
+
+    public void getDisposableToUnsubscribe() {
+        compositeDisposable.dispose();
     }
 }
