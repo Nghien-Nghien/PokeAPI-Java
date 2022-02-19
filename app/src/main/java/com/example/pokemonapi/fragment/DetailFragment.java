@@ -16,22 +16,22 @@ import com.bumptech.glide.Glide;
 import com.example.pokemonapi.R;
 import com.example.pokemonapi.adapter.TypeRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentDetailBinding;
-import com.example.pokemonapi.repository.Contracts;
-import com.example.pokemonapi.repository.DetailPresenter;
+import com.example.pokemonapi.repository.DetailRepository;
 import com.example.pokemonapi.viewmodel.DetailViewModel;
 import com.github.florent37.glidepalette.BitmapPalette;
 import com.github.florent37.glidepalette.GlidePalette;
 
 import org.jetbrains.annotations.NotNull;
 
-public class DetailFragment extends Fragment implements Contracts.DetailView {
+public class DetailFragment extends Fragment {
 
     private FragmentDetailBinding fragmentDetailBinding;
     private TypeRecyclerViewListAdapter typeRecyclerViewListAdapter;
-    private DetailPresenter detailPresenter;
+    private DetailRepository detailRepository;
     private DetailViewModel detailViewModel;
     private String namePoke;
     private String imagePoke;
+    private boolean checking0, checking1;
     private final String STATE_NAME = "Current Name";
     private final String STATE_IMAGE = "Current Image";
 
@@ -41,7 +41,7 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        detailPresenter = new DetailPresenter(this);
+        detailRepository = new DetailRepository();
 
         if (savedInstanceState == null) {
             namePoke = requireActivity().getIntent().getExtras().getString(MainFragment.EXTRA_NAME_PARAM);
@@ -56,6 +56,7 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         fragmentDetailBinding = FragmentDetailBinding.inflate(inflater, container, false);
         setUpRecyclerView();
+        detailViewModel = new ViewModelProvider(requireActivity()).get(DetailViewModel.class);
 
         return fragmentDetailBinding.getRoot();
     }
@@ -66,9 +67,13 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
         setUpDataGetFromMainFragment();
         setArrowButton();
         updateDataForUI();
+        updateProgressBarForUI();
+        updateToastForUI();
         handleOnBackPressed();
 
         if (savedInstanceState == null) {
+            checking0 = true;
+            checking1 = true;
             fetchPokemonInfo(namePoke);
         }
     }
@@ -104,32 +109,55 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
 
     private void setArrowButton() {
         fragmentDetailBinding.arrow.setOnClickListener(view -> {
-            detailViewModel.getLiveData().removeObservers(getViewLifecycleOwner());
+            detailRepository.resetValuesLiveData();
             requireActivity().finish();
         });
     }
 
     private void fetchPokemonInfo(String namePoke) {
-        detailPresenter.fetchPokemonInfo(namePoke);
+        detailRepository.fetchPokemonInfo(namePoke);
     }
 
     private void updateDataForUI() {
-        detailViewModel = new ViewModelProvider(requireActivity()).get(DetailViewModel.class);
-        detailViewModel.getLiveData().observe(getViewLifecycleOwner(), pokemonInfoAPI -> {
-            if (namePoke.equals(pokemonInfoAPI.name)) {
-                typeRecyclerViewListAdapter.refreshTypeList(pokemonInfoAPI.types);
-                fragmentDetailBinding.height.setText(pokemonInfoAPI.heightFormatted);
-                fragmentDetailBinding.weight.setText(pokemonInfoAPI.weightFormatted);
-                fragmentDetailBinding.progressHp.setProgress(pokemonInfoAPI.hpFormatted);
-                fragmentDetailBinding.progressAtk.setProgress(pokemonInfoAPI.atkFormatted);
-                fragmentDetailBinding.progressDef.setProgress(pokemonInfoAPI.defFormatted);
-                fragmentDetailBinding.progressSpd.setProgress(pokemonInfoAPI.spdFormatted);
-                fragmentDetailBinding.progressExp.setProgress(pokemonInfoAPI.expFormatted);
-                fragmentDetailBinding.progressHp.setLabelText(pokemonInfoAPI.hpString);
-                fragmentDetailBinding.progressAtk.setLabelText(pokemonInfoAPI.atkString);
-                fragmentDetailBinding.progressDef.setLabelText(pokemonInfoAPI.defString);
-                fragmentDetailBinding.progressSpd.setLabelText(pokemonInfoAPI.spdString);
-                fragmentDetailBinding.progressExp.setLabelText(pokemonInfoAPI.expString);
+        detailViewModel.getPokemonInfoLiveData().observe(getViewLifecycleOwner(), pokemonInfo -> {
+            if (pokemonInfo != null && namePoke.equals(pokemonInfo.name)) {
+                typeRecyclerViewListAdapter.refreshTypeList(pokemonInfo.types);
+                fragmentDetailBinding.height.setText(pokemonInfo.heightFormatted);
+                fragmentDetailBinding.weight.setText(pokemonInfo.weightFormatted);
+                fragmentDetailBinding.progressHp.setProgress(pokemonInfo.hpFormatted);
+                fragmentDetailBinding.progressAtk.setProgress(pokemonInfo.atkFormatted);
+                fragmentDetailBinding.progressDef.setProgress(pokemonInfo.defFormatted);
+                fragmentDetailBinding.progressSpd.setProgress(pokemonInfo.spdFormatted);
+                fragmentDetailBinding.progressExp.setProgress(pokemonInfo.expFormatted);
+                fragmentDetailBinding.progressHp.setLabelText(pokemonInfo.hpString);
+                fragmentDetailBinding.progressAtk.setLabelText(pokemonInfo.atkString);
+                fragmentDetailBinding.progressDef.setLabelText(pokemonInfo.defString);
+                fragmentDetailBinding.progressSpd.setLabelText(pokemonInfo.spdString);
+                fragmentDetailBinding.progressExp.setLabelText(pokemonInfo.expString);
+            }
+        });
+    }
+
+    private void updateProgressBarForUI() {
+        detailViewModel.getProgressBarLiveData().observe(getViewLifecycleOwner(), aBoolean -> {
+            if (aBoolean != null) {
+                if (checking0 && aBoolean) {
+                    fragmentDetailBinding.progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    fragmentDetailBinding.progressBar.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void updateToastForUI() {
+        detailViewModel.getToastLiveData().observe(getViewLifecycleOwner(), string -> {
+            if (checking1 && string != null) {
+                if (string.isEmpty()) {
+                    Toast.makeText(requireActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireActivity(), string, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -138,35 +166,15 @@ public class DetailFragment extends Fragment implements Contracts.DetailView {
         requireActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                detailViewModel.getLiveData().removeObservers(getViewLifecycleOwner());
+                detailRepository.resetValuesLiveData();
                 requireActivity().finish();
             }
         });
     }
 
     @Override
-    public void onFailure(String errorCode) {
-        Toast.makeText(requireActivity(), errorCode, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void toastForOfflineMode() {
-        Toast.makeText(requireActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void showProgressBar() {
-        fragmentDetailBinding.progressBar.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void hideProgressBar() {
-        fragmentDetailBinding.progressBar.setVisibility(View.GONE);
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
-        detailPresenter.getDisposableToUnsubscribe();
+        detailRepository.getDisposableToUnsubscribe();
     }
 }

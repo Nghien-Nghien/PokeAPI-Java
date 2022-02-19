@@ -1,7 +1,7 @@
 package com.example.pokemonapi.di;
 
-import com.example.pokemonapi.repository.DetailPresenter;
-import com.example.pokemonapi.repository.MainPresenter;
+import com.example.pokemonapi.repository.DetailRepository;
+import com.example.pokemonapi.repository.MainRepository;
 
 import javax.inject.Singleton;
 
@@ -11,7 +11,7 @@ import dagger.Component;
 @Component(modules = {NetworkModule.class, DatabaseModule.class})
 public interface AppComponent {
 
-    void injectMainPresenter(MainPresenter mainPresenter);
+    void injectMainRepository(MainRepository mainRepository);
 
-    void injectDetailPresenter(DetailPresenter detailPresenter);
+    void injectDetailRepository(DetailRepository detailRepository);
 }

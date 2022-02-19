@@ -18,21 +18,19 @@ import com.example.pokemonapi.R;
 import com.example.pokemonapi.activity.DetailActivity;
 import com.example.pokemonapi.adapter.PokemonRecyclerViewListAdapter;
 import com.example.pokemonapi.databinding.FragmentMainBinding;
-import com.example.pokemonapi.repository.Contracts;
-import com.example.pokemonapi.repository.MainPresenter;
+import com.example.pokemonapi.repository.MainRepository;
 import com.example.pokemonapi.viewmodel.MainViewModel;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
-
-public class MainFragment extends Fragment implements Contracts.MainView, PokemonRecyclerViewListAdapter.OnItemClickListener {
+public class MainFragment extends Fragment implements PokemonRecyclerViewListAdapter.OnItemClickListener {
 
     private FragmentMainBinding fragmentMainBinding;
     private PokemonRecyclerViewListAdapter pokemonRecyclerViewListAdapter;
-    private MainPresenter mainPresenter;
+    private MainRepository mainRepository;
     private MainViewModel mainViewModel;
     private int offset;
+    private boolean checking0, checking1, checking2;
     private boolean loading = true;
     private final String STATE_OFFSET = "Current Offset";
     public static final String EXTRA_NAME_PARAM = "Name Pokemon";
@@ -44,13 +42,14 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mainPresenter = new MainPresenter(this);
+        mainRepository = new MainRepository();
     }
 
     @Override
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         fragmentMainBinding = FragmentMainBinding.inflate(inflater, container, false);
         setUpRecyclerView();
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         return fragmentMainBinding.getRoot();
     }
@@ -61,9 +60,15 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
         loadMoreOnRecyclerView();
         pullToRefresh();
         updateDataForUI();
+        updateProgressBarForUI();
+        updateSwipeRefreshLayoutForUI();
+        updateToastForUI();
         handleOnBackPressed();
 
         if (savedInstanceState == null) {
+            checking0 = true;
+            checking1 = true;
+            checking2 = true;
             offset = 0;
             fetchPokemonList(offset);
         } else {
@@ -84,7 +89,7 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
     }
 
     private void fetchPokemonList(int offset) {
-        mainPresenter.fetchPokemonList(offset);
+        mainRepository.fetchPokemonList(offset);
     }
 
     private void loadMoreOnRecyclerView() {
@@ -103,13 +108,6 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
         });
     }
 
-    private void decreaseOffset(int currentOffsetValue) {
-        if (pokemonRecyclerViewListAdapter.getItemCount() <= currentOffsetValue) {
-            offset = pokemonRecyclerViewListAdapter.getItemCount() - 20;
-            loading = true;
-        }
-    }
-
     private void pullToRefresh() {
         fragmentMainBinding.swipeRefreshLayout.setOnRefreshListener(() -> {
             pokemonRecyclerViewListAdapter.clearAllOldData();
@@ -119,46 +117,67 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
     }
 
     private void updateDataForUI() {
-        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        mainViewModel.getLiveData().observe(getViewLifecycleOwner(), resultsResponses -> pokemonRecyclerViewListAdapter.refreshPokemonList(resultsResponses));
+        mainViewModel.getPokemonListLiveData().observe(getViewLifecycleOwner(), pokemonList -> {
+            if (pokemonList != null) {
+                pokemonRecyclerViewListAdapter.refreshPokemonList(pokemonList);
+            }
+        });
+    }
+
+    private void updateProgressBarForUI() {
+        mainViewModel.getProgressBarLiveData().observe(getViewLifecycleOwner(), aBoolean -> {
+            if (checking0 && aBoolean != null) {
+                if (aBoolean) {
+                    fragmentMainBinding.progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    fragmentMainBinding.progressBar.setVisibility(View.GONE);
+                }
+            } else {
+                checking0 = true;
+            }
+        });
+    }
+
+    private void updateSwipeRefreshLayoutForUI() {
+        mainViewModel.getSwipeRefreshLayoutLiveData().observe(getViewLifecycleOwner(), aBoolean -> {
+            if (aBoolean != null) {
+                if (checking1 && aBoolean) {
+                    loading = true;
+                    fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
+                } else {
+                    checking1 = true;
+                }
+            }
+        });
+    }
+
+    private void updateToastForUI() {
+        mainViewModel.getToastLiveData().observe(getViewLifecycleOwner(), string -> {
+            if (string != null) {
+                if (checking2) {
+                    if (string.isEmpty()) {
+                        Toast.makeText(requireActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
+                    } else {
+                        offset -= 20;
+                        loading = true;
+                        fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
+                        Toast.makeText(requireActivity(), string, Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    checking2 = true;
+                }
+            }
+        });
     }
 
     private void handleOnBackPressed() {
         requireActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                Objects.requireNonNull(mainViewModel.getLiveData().getValue()).clear();
+                mainRepository.resetValuesLiveData();
                 requireActivity().finish();
             }
         });
-    }
-
-    @Override
-    public void onFailure(String errorCode) {
-        decreaseOffset(offset); // Call this method when fetchPokemonList(offset) be failed on both network & database
-        fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
-        Toast.makeText(requireActivity(), errorCode, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void toastForOfflineMode() {
-        Toast.makeText(requireActivity(), getResources().getString(R.string.ToastForOfflineMode), Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void showProgressBar() {
-        fragmentMainBinding.progressBar.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void hideProgressBar() {
-        fragmentMainBinding.progressBar.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void setRefreshingForSwipeRefreshLayout() {
-        loading = true;
-        fragmentMainBinding.swipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
@@ -172,6 +191,6 @@ public class MainFragment extends Fragment implements Contracts.MainView, Pokemo
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mainPresenter.getDisposableToUnsubscribe();
+        mainRepository.getDisposableToUnsubscribe();
     }
 }

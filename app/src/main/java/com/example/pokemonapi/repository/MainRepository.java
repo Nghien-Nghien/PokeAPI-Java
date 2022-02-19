@@ -22,26 +22,25 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class MainPresenter implements Contracts.MainPresenter {
+public class MainRepository {
 
     @Inject
     APIClient apiClient;
     @Inject
     PokemonListDAO pokemonListDAO;
-    private final Contracts.MainView mainView;
     private final List<ResultsResponse> pokemonList = new ArrayList<>();
-    private final static MutableLiveData<List<ResultsResponse>> mutableLiveData = new MutableLiveData<>();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final static MutableLiveData<List<ResultsResponse>> pokemonListLiveData = new MutableLiveData<>();
+    private final static MutableLiveData<Boolean> progressBarLiveData = new MutableLiveData<>();
+    private final static MutableLiveData<Boolean> swipeRefreshLayoutLiveData = new MutableLiveData<>();
+    private final static MutableLiveData<String> toastLiveData = new MutableLiveData<>();
 
-    public MainPresenter(Contracts.MainView mainView) {
-        this.mainView = mainView;
+    public MainRepository() {
         getInjection();
     }
 
-    @Override
     public void fetchPokemonList(int offset) {
-        //pokemonListDAO.deleteAll(); // use to clear old database
-        mainView.showProgressBar();
+        progressBarLiveData.setValue(true);
 
         Observable<PokemonListAPI> pokemonListAPIObservable = apiClient.observableFetchPokemonList(offset);
         DisposableObserver<PokemonListAPI> pokemonListAPIObserver = getPokemonListAPIObserver(offset);
@@ -88,21 +87,21 @@ public class MainPresenter implements Contracts.MainPresenter {
             pokemonList.add(new ResultsResponse(offset, namePoke, urlPoke));
         }
 
-        mainView.hideProgressBar();
-        mutableLiveData.setValue(pokemonList);
-        mainView.setRefreshingForSwipeRefreshLayout();
+        progressBarLiveData.setValue(false);
+        pokemonListLiveData.setValue(pokemonList);
+        swipeRefreshLayoutLiveData.setValue(true);
         onInsertPokemonListIntoDatabase(pokemonList);
     }
 
     private void onResponseFail(Throwable e, int offset) {
-        mainView.hideProgressBar();
+        progressBarLiveData.setValue(false);
 
         if (pokemonListDAO.getPokemonList(offset).isEmpty()) {
-            mainView.onFailure(e.toString());
+            toastLiveData.setValue(e.getMessage());
         } else {
-            mutableLiveData.setValue(pokemonListDAO.getPokemonList(offset));
-            mainView.setRefreshingForSwipeRefreshLayout();
-            mainView.toastForOfflineMode();
+            pokemonListLiveData.setValue(pokemonListDAO.getPokemonList(offset));
+            swipeRefreshLayoutLiveData.setValue(true);
+            toastLiveData.setValue("");
         }
     }
 
@@ -118,11 +117,30 @@ public class MainPresenter implements Contracts.MainPresenter {
     }
 
     private void getInjection() {
-        App.getAppComponent().injectMainPresenter(this);
+        App.getAppComponent().injectMainRepository(this);
     }
 
-    public static LiveData<List<ResultsResponse>> getLiveData() {
-        return mutableLiveData;
+    public static LiveData<List<ResultsResponse>> getPokemonListLiveData() {
+        return pokemonListLiveData;
+    }
+
+    public static LiveData<Boolean> getProgressBarLiveData() {
+        return progressBarLiveData;
+    }
+
+    public static LiveData<Boolean> getSwipeRefreshLayoutLiveData() {
+        return swipeRefreshLayoutLiveData;
+    }
+
+    public static LiveData<String> getToastLiveData() {
+        return toastLiveData;
+    }
+
+    public void resetValuesLiveData() {
+        pokemonListLiveData.postValue(null);
+        progressBarLiveData.postValue(null);
+        swipeRefreshLayoutLiveData.postValue(null);
+        toastLiveData.postValue(null);
     }
 
     public void getDisposableToUnsubscribe() {

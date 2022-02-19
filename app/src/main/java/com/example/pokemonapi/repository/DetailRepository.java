@@ -24,26 +24,24 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class DetailPresenter implements Contracts.DetailPresenter {
+public class DetailRepository {
 
     @Inject
     APIClient apiClient;
     @Inject
     PokemonInfoDAO pokemonInfoDAO;
-    private final Contracts.DetailView detailView;
     private final List<TypesResponse> typesData = new ArrayList<>();
-    private final static MutableLiveData<PokemonInfoAPI> mutableLiveData = new MutableLiveData<>();
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final static MutableLiveData<PokemonInfoAPI> pokemonInfoLiveData = new MutableLiveData<>();
+    private final static MutableLiveData<Boolean> progressBarLiveData = new MutableLiveData<>();
+    private final static MutableLiveData<String> toastLiveData = new MutableLiveData<>();
 
-    public DetailPresenter(Contracts.DetailView detailView) {
-        this.detailView = detailView;
+    public DetailRepository() {
         getInjection();
     }
 
-    @Override
     public void fetchPokemonInfo(String namePoke) {
-        //pokemonInfoDAO.deleteAll(); // use to clear old database
-        detailView.showProgressBar();
+        progressBarLiveData.setValue(true);
 
         Observable<PokemonInfoAPI> pokemonInfoAPIObservable = apiClient.observableFetchPokemonInfo(namePoke);
         DisposableObserver<PokemonInfoAPI> pokemonInfoAPIObserver = getPokemonInfoAPIObserver(namePoke);
@@ -108,19 +106,19 @@ public class DetailPresenter implements Contracts.DetailPresenter {
                 hpFormatted, atkFormatted, defFormatted, spdFormatted, expFormatted,
                 hpString, atkString, defString, spdString, expString);
 
-        detailView.hideProgressBar();
-        mutableLiveData.setValue(pokemonInfo);
+        progressBarLiveData.setValue(false);
+        pokemonInfoLiveData.setValue(pokemonInfo);
         onInsertPokemonInfoIntoDatabase(pokemonInfo);
     }
 
     private void onResponseFail(Throwable e, String namePoke) {
-        detailView.hideProgressBar();
+        progressBarLiveData.setValue(false);
 
         if (pokemonInfoDAO.getPokemonInfo(namePoke) == null) {
-            detailView.onFailure(e.toString());
+            toastLiveData.setValue(e.getMessage());
         } else {
-            mutableLiveData.setValue(pokemonInfoDAO.getPokemonInfo(namePoke));
-            detailView.toastForOfflineMode();
+            pokemonInfoLiveData.setValue(pokemonInfoDAO.getPokemonInfo(namePoke));
+            toastLiveData.setValue("");
         }
     }
 
@@ -136,11 +134,25 @@ public class DetailPresenter implements Contracts.DetailPresenter {
     }
 
     private void getInjection() {
-        App.getAppComponent().injectDetailPresenter(this);
+        App.getAppComponent().injectDetailRepository(this);
     }
 
-    public static LiveData<PokemonInfoAPI> getLiveData() {
-        return mutableLiveData;
+    public static LiveData<PokemonInfoAPI> getPokemonInfoLiveData() {
+        return pokemonInfoLiveData;
+    }
+
+    public static LiveData<Boolean> getProgressBarLiveData() {
+        return progressBarLiveData;
+    }
+
+    public static LiveData<String> getToastLiveData() {
+        return toastLiveData;
+    }
+
+    public void resetValuesLiveData() {
+        pokemonInfoLiveData.postValue(null);
+        progressBarLiveData.postValue(null);
+        toastLiveData.postValue(null);
     }
 
     public void getDisposableToUnsubscribe() {
