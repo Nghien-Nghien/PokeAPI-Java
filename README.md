@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">  
-⚔️ ϞϞ (๑⚈ ․̫ ⚈๑)∩ The project development with ViewBinding, Dagger2, Retrofit2 with RxJava3, Room Database, RecyclerView, MaterialCardView with ShapeableOverlay Style and ProgressView based on MVP architecture.
+⚔️ ϞϞ (๑⚈ ․̫ ⚈๑)∩ The project development with ViewBinding, ViewModel with LiveData, Dagger2, Retrofit2 with RxJava3, Room Database, MaterialCardView with ShapeableOverlay Style and ProgressView based on MVVM Architecture.
 </p>
 </br>
 
@@ -38,11 +38,11 @@
 
 ## Architecture
 <p align="center">
-The project is based on the MVP architecture.
+The project is based on the MVVM Architecture.
 </p>
 
 <p align="center">
-<img src="https://user-images.githubusercontent.com/85010162/150523526-6fb3ec7f-4003-44bf-8457-8d7f6a5a7568.png"/>
+<img src="https://user-images.githubusercontent.com/85010162/154807450-8bdb5a54-a998-41ab-96f0-50817cc6932a.png"/>
 </p>
 
 ## Open API
