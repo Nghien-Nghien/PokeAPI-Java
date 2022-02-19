@@ -23,7 +23,8 @@
 
 ## Tech Stack & Open-Source Libraries
 - Architectures & Components
-  - MVP Architecture (Model – View – Presenter)
+  - MVVM Architecture (Model - View - ViewModel)
+  - Repository Pattern
   - ViewModel - Allows data to survive configuration changes such as screen rotations.
   - LiveData - An observable data holder class.
   - ViewBinding - A feature that allows you to more easily write code that interacts with views.
